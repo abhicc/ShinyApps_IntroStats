@@ -1,12 +1,22 @@
+################################################################################
+# This app demonstrates the concept of skewness (symmetricity) in terms of 
+# histograms and boxplots. It also demonstrates how the mean and standard deviation
+# affects these plots, and how numerical summaries are affected by extreme outliers.
+################################################################################
 library(sn)
 library(tidyverse)
 library(mosaic)
 library(fGarch)
+library(shiny)
+################################################################################
 
+# user interface
 ui <- fluidPage(
+  
   # Application title
   titlePanel("Summarizing Numerical Data"),
-  # Sidebar with a numeric input for month
+  
+  # inputs
   fluidRow(
     
     column(3,
@@ -31,8 +41,8 @@ ui <- fluidPage(
                        choices = c("Symmetric", "Positively Skewed", "Negatively Skewed"),
                        selected = "Symmetric"))
   ),
-  # Show a plot of the generated distribution
   
+  # outputs
   fluidRow(
     column(4, 
            plotOutput("hist")),
@@ -44,6 +54,8 @@ ui <- fluidPage(
 )
 
 
+
+# server function
 server <- function(input, output) {
   
   df <- reactive({
@@ -110,3 +122,4 @@ server <- function(input, output) {
 
 # Run the application
 shinyApp(ui = ui, server = server)
+################################################################################

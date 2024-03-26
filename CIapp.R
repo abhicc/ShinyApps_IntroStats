@@ -1,6 +1,13 @@
+################################################################################
+# This app demonstrates the concept of confidence intervals for various contexts,  
+# specifically the ideas such as confidence intervals are not fixed, they might not 
+# contain the "true" population parameter, how CIs are affected by sample sizes, 
+# the interpretation of CIs.
+################################################################################
 library(tidyverse)
 library(mosaic)
 library(shiny)
+################################################################################
 
 ui <- fluidPage(
   # Application title
@@ -21,11 +28,11 @@ ui <- fluidPage(
     
     column(3,
            sliderInput(inputId = "sample_size",
-                       label = "Choose a sample size ($n$)",
+                       label = "Choose a sample size",
                        min = 25,
                        max = 300,
                        value = 25,
-                       setp = 25)),
+                       step = 25)),
     
     column(3,
            radioButtons(inputId = "numCI",
@@ -132,3 +139,5 @@ server <- function(input, output) {
 
 # Run the application
 shinyApp(ui = ui, server = server)
+################################################################################
+
