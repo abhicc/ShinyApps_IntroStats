@@ -3,6 +3,7 @@
 # histograms and boxplots. It also demonstrates how the mean and standard deviation
 # affects these plots, and how numerical summaries are affected by extreme outliers.
 ################################################################################
+# Required libraries
 library(sn)
 library(tidyverse)
 library(mosaic)
