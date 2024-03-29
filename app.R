@@ -60,20 +60,19 @@ ui <- fluidPage(
 server <- function(input, output) {
   
   df <- reactive({
-    
-    if(input$shape == "Symmetric")
-    {
+    if(input$shape == "Symmetric") {
       val <- rnorm(1000, mean = input$mean_value, sd = input$sd_value)
       df <- data.frame(value = val)
-    }
-    else if (input$shape == "Positively Skewed")
-    {
-      val_right <- rsnorm(1000, mean = input$mean_value, sd = input$sd_value, xi = 3)
+    } else if (input$shape == "Positively Skewed") {
+      # Generate 900 normally distributed values and 100 values between the mean and 100 points larger than the mean
+      val_right <- c(rnorm(900, mean = input$mean_value, sd = input$sd_value),
+                     runif(100, min = input$mean_value, max = input$mean_value+100))
       df <- data.frame(value = val_right)
-    }
-    else 
-    {
-      val_left <- rsnorm(1000, mean = input$mean_value, sd = input$sd_value, xi = -3)  
+    } else {
+      # Generate 900 normally distributed values and 100 values between the 100 minus the mean and the mean
+      
+      val_left <- c(rnorm(900, mean = input$mean_value, sd = input$sd_value),
+                    runif(100, min = input$mean_value-100, max = input$mean_value))
       df <- data.frame(value = val_left)
     }
     
