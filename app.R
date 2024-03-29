@@ -83,26 +83,36 @@ server <- function(input, output) {
   })
   
   
-  output$hist <- renderPlot({
+output$hist <- renderPlot({
     
     ggplot(data = df()) +
-      geom_histogram(mapping = aes(x = value), color = "black", fill = "lightgreen", bins = 100) +
+      geom_histogram(mapping = aes(x = value, fill = "Histogram"), color = "black", bins = 100) +
       labs(x = "Value", y = "Frequency", title = "Histogram") +
-      # geom_vline(mapping = aes(xintercept = mean(df()$value)), color = "red")+
-      # geom_vline(mapping = aes(xintercept = median(df()$value)), color = "blue", linetype = 3) +
-      xlim(c(-100, 100))
+      geom_vline(mapping = aes(xintercept = mean(df()$value), color = "Mean"))+
+      geom_vline(mapping = aes(xintercept = median(df()$value), color = "Median")) +
+      scale_color_manual("", values = c(Mean = "red", Median = "blue")) +
+      scale_fill_manual("", values = c("lightgreen"), guide = FALSE) +
+      xlim(c(-100, 100)) +
+      theme(legend.position = "right")
     
   })
   
   output$boxplot <- renderPlot({
     
     ggplot(data = df()) +
-      geom_boxplot(mapping = aes(x = value), color = "black", fill = "lightgreen") +
+      geom_boxplot(mapping = aes(x = value, fill = "Boxplot"), color = "black") +
       theme(axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
       labs(x = "Value", y = "", title = "Boxplot") +
-      xlim(c(-100, 100))
+      geom_vline(mapping = aes(xintercept = mean(df()$value), color = "Mean"))+
+      geom_vline(mapping = aes(xintercept = median(df()$value), color = "Median")) +
+      scale_color_manual("", values = c(Mean = "red", Median = "blue")) +
+      scale_fill_manual("", values = c("lightgreen"), guide = FALSE) +
+      xlim(c(-100, 100)) +
+      theme(legend.position = "right")
     
   })
+
+  
   
   
   
