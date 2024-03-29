@@ -13,44 +13,72 @@ library(shiny)
 
 # user interface
 ui <- fluidPage(
-  
   # Application title
-  titlePanel("Summarizing Numerical Data"),
+  titlePanel("Summarizing Numerical Data: Visualizing Mean and Median"),
   
-  # inputs
-  fluidRow(
+  # Tabset
+  tabsetPanel(
+    tabPanel("Fixed Mean and SD",
+             fluidRow(
+               column(3,
+                      sliderInput(inputId = "mean_value",
+                                  label = "Input a mean value",
+                                  min = -100,
+                                  max = 100,
+                                  value = 0,
+                                  step = 0.1)),
+               column(3,
+                      sliderInput(inputId = "sd_value",
+                                  label = "Input a standard deviation",
+                                  min = 1,
+                                  max = 15,
+                                  value = 10, 
+                                  step = 1)),
+               column(3,
+                      selectInput(inputId = "shape",
+                                  label = "Select a shape",
+                                  choices = c("Symmetric", "Positively Skewed", "Negatively Skewed"),
+                                  selected = "Symmetric"))
+             ),
+             fluidRow(
+               column(6, 
+                      plotOutput("hist")),
+               column(6,
+                      plotOutput("boxplot"))
+             )
+    ),
     
-    column(3,
-           numericInput(inputId = "mean_value",
-                        label = "Input a mean value",
-                        min = -25,
-                        max = 25,
-                        value = 0,
-                        step = 0.1)),
-    
-    column(3,
-           numericInput(inputId = "sd_value",
-                        label = "Input a standard deviation",
-                        min = 1,
-                        max = 20,
-                        value = 10, 
-                        step = 1)),
-    
-    column(3,
-           selectInput(inputId = "shape",
-                       label = "Select a shape",
-                       choices = c("Symmetric", "Positively Skewed", "Negatively Skewed"),
-                       selected = "Symmetric"))
-  ),
-  
-  # outputs
-  fluidRow(
-    column(4, 
-           plotOutput("hist")),
-    column(4,
-           plotOutput("boxplot")),
-    column(4, 
-           tableOutput("table"))
+    tabPanel("Dynamic Mean and SD",
+             fluidRow(
+               column(3,
+                      sliderInput(inputId = "mean_value_dynamic",
+                                  label = "Input a mean value",
+                                  min = -100,
+                                  max = 100,
+                                  value = 0,
+                                  step = 0.1)),
+               column(3,
+                      sliderInput(inputId = "sd_value_dynamic",
+                                  label = "Input a standard deviation",
+                                  min = 1,
+                                  max = 15,
+                                  value = 10, 
+                                  step = 1)),
+               column(3,
+                      selectInput(inputId = "shape_dynamic",
+                                  label = "Select a shape",
+                                  choices = c("Symmetric", "Positively Skewed", "Negatively Skewed"),
+                                  selected = "Symmetric"))
+             ),
+             fluidRow(
+               column(4, 
+                      plotOutput("hist_dynamic")),
+               column(4,
+                      plotOutput("boxplot_dynamic")),
+               column(4, 
+                      tableOutput("table_dynamic"))
+             )
+    )
   )
 )
 
