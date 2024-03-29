@@ -23,15 +23,15 @@ ui <- fluidPage(
                column(3,
                       sliderInput(inputId = "mean_value",
                                   label = "Input a mean value",
-                                  min = -100,
-                                  max = 100,
+                                  min = -0,
+                                  max = 0,
                                   value = 0,
                                   step = 0.1)),
                column(3,
                       sliderInput(inputId = "sd_value",
                                   label = "Input a standard deviation",
-                                  min = 1,
-                                  max = 15,
+                                  min = 10,
+                                  max = 10,
                                   value = 10, 
                                   step = 1)),
                column(3,
@@ -61,7 +61,7 @@ ui <- fluidPage(
                                   step = 0.1)),
                column(3,
                       sliderInput(inputId = "sd_value_dynamic",
-                                  label = "Input a standard deviation",
+                                  label = "Input a standard deviation", 
                                   min = 1,
                                   max = 15,
                                   value = 10, 
@@ -73,12 +73,11 @@ ui <- fluidPage(
                                   selected = "Symmetric"))
              ),
              fluidRow(
-               column(4, 
+               column(6, 
                       plotOutput("hist_dynamic")),
-               column(4,
+               column(6,
                       plotOutput("boxplot_dynamic")),
-               column(4, 
-                      tableOutput("table_dynamic"))
+             
              )
     )
   )
@@ -125,6 +124,20 @@ output$hist <- renderPlot({
       theme(legend.position = "right")
     
   })
+
+output$hist_dynamic <- renderPlot({
+  
+  ggplot(data = df()) +
+    geom_histogram(mapping = aes(x = value, fill = "Histogram"), color = "black", bins = 100) +
+    labs(x = "Value", y = "Frequency", title = "Histogram") +
+    geom_vline(mapping = aes(xintercept = mean(df()$value), color = "Mean"))+
+    geom_vline(mapping = aes(xintercept = median(df()$value), color = "Median")) +
+    scale_color_manual("", values = c(Mean = "red", Median = "blue")) +
+    scale_fill_manual("", values = c("lightgreen"), guide = FALSE) +
+    xlim(c(-100, 100)) +
+    theme(legend.position = "right")
+  
+})
   
   output$boxplot <- renderPlot({
     
@@ -140,9 +153,22 @@ output$hist <- renderPlot({
       theme(legend.position = "right")
     
   })
+  
+  output$boxplot_dynamic <- renderPlot({
+    
+    ggplot(data = df()) +
+      geom_boxplot(mapping = aes(x = value, fill = "Boxplot"), color = "black") +
+      theme(axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
+      labs(x = "Value", y = "", title = "Boxplot") +
+      geom_vline(mapping = aes(xintercept = 0, color = "Mean"))+
+      geom_vline(mapping = aes(xintercept = median(df()$value), color = "Median")) +
+      scale_color_manual("", values = c(Mean = "red", Median = "blue")) +
+      scale_fill_manual("", values = c("lightgreen"), guide = FALSE) +
+      xlim(c(-100, 100)) +
+      theme(legend.position = "right")
 
   
-  
+  })
   
   
   output$table <- renderTable({
