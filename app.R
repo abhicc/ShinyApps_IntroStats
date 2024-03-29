@@ -41,10 +41,12 @@ ui <- fluidPage(
                                   selected = "Symmetric"))
              ),
              fluidRow(
-               column(6, 
+               column(5, 
                       plotOutput("hist")),
-               column(6,
-                      plotOutput("boxplot"))
+               column(5,
+                      plotOutput("boxplot")),
+               column(2,
+                      tableOutput("table"))
              )
     ),
     
