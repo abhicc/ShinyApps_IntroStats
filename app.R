@@ -100,7 +100,7 @@ ui <- fluidPage(
 )
 
 
-# Define server logic
+# Server function
 server <- function(input, output, session) {
   
   uploaded_data <- reactive({
@@ -254,3 +254,4 @@ server <- function(input, output, session) {
 
 # Run the application
 shinyApp(ui = ui, server = server)
+########################################################################################################
