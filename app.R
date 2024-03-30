@@ -10,12 +10,8 @@ library(mosaic)
 library(fGarch)
 library(shiny)
 ################################################################################
-
-library(shiny)
-library(ggplot2)
-library(readr)
-
-# User interface
+ 
+# user interface
 ui <- fluidPage(
   
   # Application title
@@ -105,7 +101,7 @@ ui <- fluidPage(
 ))
 
 
-# Server function
+# server function
 server <- function(input, output, session) {
   
   uploaded_data <- reactive({
@@ -119,40 +115,47 @@ server <- function(input, output, session) {
   
   
   output$uploaded_hist <- renderPlot({
-    req(uploaded_data(), input$var)
-    ggplot(data = uploaded_data(), aes_string(x = input$var)) +
-      geom_histogram(mapping = aes(x = .data[[input$var]], fill = "Histogram"), color = "black", bins = 30) +
+    data <- uploaded_data()
+    
+    # Filter out missing and non-finite values
+    data <- data[complete.cases(data[[input$var]]) & is.finite(data[[input$var]]), ]
+    
+    ggplot(data = data, aes_string(x = input$var)) +
+      geom_histogram(mapping = aes(fill = "Histogram"), color = "black", bins = 30) +
       labs(x = "Value", y = "Frequency", title = "Histogram") +
-      geom_vline(mapping = aes(xintercept = mean(uploaded_data()[[input$var]]), color = "Mean")) +
-      geom_vline(mapping = aes(xintercept = median(uploaded_data()[[input$var]]), color = "Median")) +
+      geom_vline(mapping = aes(xintercept = mean(data[[input$var]]), color = "Mean")) +
+      geom_vline(mapping = aes(xintercept = median(data[[input$var]]), color = "Median")) +
       scale_color_manual("", values = c(Mean = "red", Median = "blue")) +
       scale_fill_manual("", values = c("lightgreen"), guide = FALSE) +
       theme(legend.position = "right")
   })
+  
   output$uploaded_boxplot <- renderPlot({
-    req(uploaded_data(), input$var)
-    ggplot(data = uploaded_data(), aes_string(x = input$var)) +
+    data <- uploaded_data()
+    
+    # Filter out missing and non-finite values
+    data <- data[complete.cases(data[[input$var]]) & is.finite(data[[input$var]]), ]
+    
+    ggplot(data = data, aes_string(x = input$var)) +
       geom_boxplot(color = "black", fill = "lightgreen") +
-      geom_vline(mapping = aes(xintercept = mean(uploaded_data()[[input$var]]), color = "Mean")) +
-      geom_vline(mapping = aes(xintercept = median(uploaded_data()[[input$var]]), color = "Median")) +
+      geom_vline(mapping = aes(xintercept = mean(data[[input$var]]), color = "Mean")) +
+      geom_vline(mapping = aes(xintercept = median(data[[input$var]]), color = "Median")) +
       scale_color_manual("", values = c(Mean = "red", Median = "blue")) +
       scale_fill_manual("", values = c("lightgreen"), guide = FALSE) +
       labs(x = "Value", y = " ", title = "Boxplot") +
       theme(legend.position = "right")
   })
   
+  
  
   output$uploaded_table <- renderTable({
     req(uploaded_data(), input$var)
     
-    # Assuming df() is your uploaded data
+    # Filter out missing values 
     data_summary <- summary(uploaded_data()[[input$var]], na.rm = TRUE)
-    
-    # Calculate IQR and range
     data_iqr <- IQR(uploaded_data()[[input$var]], na.rm = TRUE)
     data_range <- diff(range(uploaded_data()[[input$var]], na.rm = TRUE))
     
-    # Create a data frame with summary statistics
     atable <- data.frame(Summary = c("min", "Q1", "median","mean", "Q3", "max", "IQR", "range"),
                          Values = c(data_summary["Min."], data_summary["1st Qu."], data_summary["Median"], data_summary["Mean"],
                                     data_summary["3rd Qu."], data_summary["Max."],
@@ -162,22 +165,28 @@ server <- function(input, output, session) {
     atable
   })
   
+  # Create dataframe for fixed tab
   df <- reactive({
     if(input$shape == "Symmetric") {
       val <- rnorm(1000, mean = input$mean_value, sd = input$sd_value)
       df <- data.frame(value = val)
     } else if (input$shape == "Positively Skewed") {
+      # Generate 900 normally distributed values and 100 values between the mean and 100 points larger than the mean
       val_right <- c(rnorm(900, mean = input$mean_value, sd = input$sd_value),
                      runif(100, min = input$mean_value, max = input$mean_value + 100))
       df <- data.frame(value = val_right)
     } else {
+      # Generate 900 normally distributed values and 100 values between the 100 minus the mean and the mean
       val_left <- c(rnorm(900, mean = input$mean_value, sd = input$sd_value),
                     runif(100, min = input$mean_value - 100, max = input$mean_value))
       df <- data.frame(value = val_left)
     }
+    # val_right <- c(val, tail(val[order(val)], 100) + rnorm(100, mean=input$mean_value+10, sd=2))
+    # val_transform <- log10(val); df <- data.frame(val_transform)
     return(df)
   })
   
+  # Create dataframe for dynamic tab
   df_dynamic <- reactive({
     if(input$shape_dynamic == "Symmetric") {
       val <- rnorm(1000, mean = input$mean_value_dynamic, sd = input$sd_value_dynamic)
