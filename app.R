@@ -86,6 +86,7 @@ ui <- fluidPage(
              )
     ),
     
+    
     tabPanel("Upload File",
              fluidRow(
                fileInput("file", "Upload a file"),
@@ -100,15 +101,17 @@ ui <- fluidPage(
 
 
 # Define server logic
-# Define server logic
 server <- function(input, output, session) {
   
   uploaded_data <- reactive({
     req(input$file)
     df <- read.csv(input$file$datapath, header = TRUE)
-    updateSelectInput(session, "var", choices = names(df))
+    # Filter quantitative variables
+    quantitative_vars <- names(df)[sapply(df, is.numeric)]
+    updateSelectInput(session, "var", choices = quantitative_vars)
     return(df)
   })
+  
   
   output$uploaded_hist <- renderPlot({
     req(uploaded_data(), input$var)
