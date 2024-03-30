@@ -89,15 +89,20 @@ ui <- fluidPage(
     
     tabPanel("Upload File",
              fluidRow(
-               fileInput("file", "Upload a file"),
-               column(3, selectInput("var", "Select a variable", "")),
-               column(3, plotOutput("uploaded_hist")),
-               column(3, plotOutput("uploaded_boxplot")),
-               column(3, tableOutput("uploaded_table"))
+               column(6, align = "left", h4("Upload a CSV file")),
+               column(6, align = "left", h4("Choose a Variable")),
+               fluidRow(
+                 column(6, fileInput("file", "", accept = ".csv")),
+                 column(6, selectInput("var", "", ""))
+               ),
+               fluidRow(
+                 column(3, plotOutput("uploaded_hist")),
+                 column(3, plotOutput("uploaded_boxplot")),
+                 column(3, tableOutput("uploaded_table"))
              )
     )
   )
-)
+))
 
 
 # Server function
@@ -117,25 +122,26 @@ server <- function(input, output, session) {
     req(uploaded_data(), input$var)
     ggplot(data = uploaded_data(), aes_string(x = input$var)) +
       geom_histogram(mapping = aes(x = .data[[input$var]], fill = "Histogram"), color = "black", bins = 30) +
-      labs(x = "Value", y = "Frequency", title = "Uploaded Histogram") +
+      labs(x = "Value", y = "Frequency", title = "Histogram") +
       geom_vline(mapping = aes(xintercept = mean(uploaded_data()[[input$var]]), color = "Mean")) +
       geom_vline(mapping = aes(xintercept = median(uploaded_data()[[input$var]]), color = "Median")) +
       scale_color_manual("", values = c(Mean = "red", Median = "blue")) +
       scale_fill_manual("", values = c("lightgreen"), guide = FALSE) +
       theme(legend.position = "right")
   })
-  
   output$uploaded_boxplot <- renderPlot({
     req(uploaded_data(), input$var)
     ggplot(data = uploaded_data(), aes_string(x = input$var)) +
-      geom_boxplot(color = "black", fill = "lightgreen", bins = 30) +
+      geom_boxplot(color = "black", fill = "lightgreen") +
       geom_vline(mapping = aes(xintercept = mean(uploaded_data()[[input$var]]), color = "Mean")) +
       geom_vline(mapping = aes(xintercept = median(uploaded_data()[[input$var]]), color = "Median")) +
       scale_color_manual("", values = c(Mean = "red", Median = "blue")) +
       scale_fill_manual("", values = c("lightgreen"), guide = FALSE) +
-      labs(x = "Value", y = "input$var", title = "Uploaded Boxplot") +
+      labs(x = "Value", y = " ", title = "Boxplot") +
       theme(legend.position = "right")
   })
+  
+ 
   output$uploaded_table <- renderTable({
     req(uploaded_data(), input$var)
     
@@ -147,8 +153,8 @@ server <- function(input, output, session) {
     data_range <- diff(range(uploaded_data()[[input$var]], na.rm = TRUE))
     
     # Create a data frame with summary statistics
-    atable <- data.frame(Summary = c("min", "Q1", "median", "Q3", "max", "IQR", "range"),
-                         Values = c(data_summary["Min."], data_summary["1st Qu."], data_summary["Median"],
+    atable <- data.frame(Summary = c("min", "Q1", "median","mean", "Q3", "max", "IQR", "range"),
+                         Values = c(data_summary["Min."], data_summary["1st Qu."], data_summary["Median"], data_summary["Mean"],
                                     data_summary["3rd Qu."], data_summary["Max."],
                                     data_iqr,
                                     data_range))
