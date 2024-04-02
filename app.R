@@ -153,15 +153,16 @@ server <- function(input, output, session) {
   # Create dataframe for fixed tab
   df <- reactive({
     if(input$shape == "Symmetric") {
-      val <- rnorm(1000, mean = 0, sd = 10)
-      df <- data.frame(value = val)
+      # Generate 1000 random #s from a normal dist with fixed mean 0 and sd 10 
+      val <- rnorm(1000, mean = 0, sd = 10) 
+      df <- data.frame(value = val) # Create df with one col named value, containing the generated random numbers
     } else if (input$shape == "Positively Skewed") {
-      # Generate 900 normally distributed values and 100 values between the mean and 100 points larger than the mean
-      val_right <- c(rnorm(900, mean = 0, sd = 10), # fix mean to 0 and sd to 10
+      # Generate 900 random #s from a normal dist with mean 0 and sd 10 then append 100 uniform random #s (runif) between 0 and 100 to create positive skewness
+      val_right <- c(rnorm(900, mean = 0, sd = 10), 
                      runif(100, min = 0, max = 100))
       df <- data.frame(value = val_right)
     } else {
-      # Generate 900 normally distributed values and 100 values between the 100 minus the mean and the mean
+      # Generate 900 random #s from a normal dist with mean 0 and sd 10 then append 100 uniform random #s (runif) between -100 and 0 to create negative skewness
       val_left <- c(rnorm(900, mean = 0, sd = 10),
                     runif(100, min = -100, max = 0))
       df <- data.frame(value = val_left)
@@ -172,12 +173,15 @@ server <- function(input, output, session) {
   # Create dataframe for dynamic tab
   df_dynamic <- reactive({
     if(input$shape_dynamic == "Symmetric") {
+      # Generate 1000 random #s from a normal dist with a mean and sd selected by the user
       val <- rnorm(1000, mean = input$mean_value_dynamic, sd = input$sd_value_dynamic)
       df <- data.frame(value = val)
+      # Generate 900 random #s from a normal dist with mean and sd determined by user then append 100 uniform random #s (runif) to create positive skewness
     } else if (input$shape_dynamic == "Positively Skewed") {
       val_right <- c(rnorm(900, mean = input$mean_value_dynamic, sd = input$sd_value_dynamic),
                      runif(100, min = input$mean_value_dynamic, max = input$mean_value_dynamic + 100)) # increasing positive skewness
       df <- data.frame(value = val_right)
+      # Generate 900 random #s from a normal dist with mean and sd determined by user then append 100 uniform random #s (runif) to create negative skewness
     } else {
       val_left <- c(rnorm(900, mean = input$mean_value_dynamic, sd = input$sd_value_dynamic),
                     runif(100, min = input$mean_value_dynamic - 100, max = input$mean_value_dynamic)) # increasing negative skewness
@@ -235,6 +239,8 @@ server <- function(input, output, session) {
       xlim(c(-100, 100)) +
       theme(legend.position = "right")
   })
+  
+  # Summary Table for Fixed Mean and SD tab
   output$table <- renderTable({
     
     res <- favstats(~ value, data=df())
