@@ -160,12 +160,18 @@ server <- function(input, output, session) {
     } else if (input$shape == "Positively Skewed") {
       # Generate 900 random #s from a normal dist with mean 0 and sd 10 then append 600 uniform random #s (runif) between 0 and 100 to create positive skewness
       val_right <- c(rnorm(900, mean = 0, sd = 10), 
-                     runif(600, min = 0, max = 100))
+                     runif(500, min = 0, max = 25),
+                     runif(400, min = 25, max = 50),
+                     runif(50, min = 50, max = 75),
+                     runif(300, min = 50, max = 100))
       df <- data.frame(value = val_right)
     } else {
       # Generate 900 random #s from a normal dist with mean 0 and sd 10 then append 600 uniform random #s (runif) between -100 and 0 to create negative skewness
       val_left <- c(rnorm(900, mean = 0, sd = 10),
-                    runif(600, min = -100, max = 0))
+                    runif(500, min = -25, max = 0), 
+                    runif(400, min = -50, max = -25), 
+                    runif(50, min = -75, max = -50), 
+                    runif(300, min = -100, max = -50))
       df <- data.frame(value = val_left)
     }
     return(df)
@@ -179,13 +185,21 @@ server <- function(input, output, session) {
       df <- data.frame(value = val)
       # Generate 900 random #s from a normal dist with mean and sd determined by user then append 600 uniform random #s (runif) to create positive skewness
     } else if (input$shape_dynamic == "Positively Skewed") {
-      val_right <- c(rnorm(900, mean = input$mean_value_dynamic, sd = input$sd_value_dynamic),
-                     runif(600, min = input$mean_value_dynamic, max = input$mean_value_dynamic + 100)) # increasing positive skewness
+      
+      val_right <- c(rnorm(900, mean = 0, sd = 10),
+                    runif(500, min = input$mean_value_dynamic, max = input$mean_value_dynamic+25), 
+                    runif(400, min = input$mean_value_dynamic+25, max = input$mean_value_dynamic+50), 
+                    runif(50, min = input$mean_value_dynamic+50, max = input$mean_value_dynamic+75), 
+                    runif(300, min = input$mean_value_dynamic+50, max = input$mean_value_dynamic+100))
+ 
       df <- data.frame(value = val_right)
       # Generate 900 random #s from a normal dist with mean and sd determined by user then append 600 uniform random #s (runif) to create negative skewness
     } else {
       val_left <- c(rnorm(900, mean = input$mean_value_dynamic, sd = input$sd_value_dynamic),
-                    runif(600, min = input$mean_value_dynamic - 100, max = input$mean_value_dynamic)) # increasing negative skewness
+                    runif(500, min = input$mean_value_dynamic-25, max = input$mean_value_dynamic), 
+                    runif(400, min = input$mean_value_dynamic-50, max = input$mean_value_dynamic-25), 
+                    runif(50, min = input$mean_value_dynamic-75, max = input$mean_value_dynamic-50), 
+                    runif(300, min = input$mean_value_dynamic-100, max = input$mean_value_dynamic-50)) # increasing negative skewness
       df <- data.frame(value = val_left)
     }
     return(df)
