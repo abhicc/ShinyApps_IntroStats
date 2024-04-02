@@ -77,8 +77,8 @@ ui <- fluidPage(
                  column(6, selectInput("var", "", ""))
                ),
                fluidRow(
-                 column(3, plotOutput("uploaded_hist")),
-                 column(3, plotOutput("uploaded_boxplot")),
+                 column(6, plotOutput("uploaded_hist")),
+                 column(6, plotOutput("uploaded_boxplot")),
                  column(3, tableOutput("uploaded_table"))
              )
     )
@@ -106,10 +106,10 @@ server <- function(input, output, session) {
     data <- data[complete.cases(data[[input$var]]) & is.finite(data[[input$var]]), ]
     
     ggplot(data = data, aes_string(x = input$var)) +
-      geom_histogram(mapping = aes(fill = "Histogram"), color = "black", bins = 30) +
+      geom_histogram(mapping = aes(fill = "Histogram"), color = "black", bins = 50) +
       labs(x = "Value", y = "Frequency", title = "Histogram") +
-      geom_vline(mapping = aes(xintercept = mean(data[[input$var]]), color = "Mean")) +
-      geom_vline(mapping = aes(xintercept = median(data[[input$var]]), color = "Median")) +
+      geom_vline(mapping = aes(xintercept = mean(data[[input$var]]), color = "Mean"), size = 2) +
+      geom_vline(mapping = aes(xintercept = median(data[[input$var]]), color = "Median"), size = 2) +
       scale_color_manual("", values = c(Mean = "#D55E00", Median = "#0072B2")) +
       scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
       theme(legend.position = "none")
@@ -123,8 +123,8 @@ server <- function(input, output, session) {
     
     ggplot(data = data, aes_string(x = input$var)) +
       geom_boxplot(color = "black", fill = "#56B4E9") +
-      geom_vline(mapping = aes(xintercept = mean(data[[input$var]]), color = "Mean")) +
-      geom_vline(mapping = aes(xintercept = median(data[[input$var]]), color = "Median")) +
+      geom_vline(mapping = aes(xintercept = mean(data[[input$var]]), color = "Mean"), size = 2) +
+      geom_vline(mapping = aes(xintercept = median(data[[input$var]]), color = "Median"), size = 2) +
       scale_color_manual("", values = c(Mean = "#D55E00", Median = "#0072B2")) +
       scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
       labs(x = "Value", y = " ", title = "Boxplot") +
@@ -150,6 +150,7 @@ server <- function(input, output, session) {
     atable
   })
   
+  set.seed(422024)
   # Create dataframe for fixed tab
   df <- reactive({
     if(input$shape == "Symmetric") {
@@ -159,12 +160,12 @@ server <- function(input, output, session) {
     } else if (input$shape == "Positively Skewed") {
       # Generate 900 random #s from a normal dist with mean 0 and sd 10 then append 100 uniform random #s (runif) between 0 and 100 to create positive skewness
       val_right <- c(rnorm(900, mean = 0, sd = 10), 
-                     runif(100, min = 0, max = 100))
+                     runif(500, min = 0, max = 100))
       df <- data.frame(value = val_right)
     } else {
       # Generate 900 random #s from a normal dist with mean 0 and sd 10 then append 100 uniform random #s (runif) between -100 and 0 to create negative skewness
       val_left <- c(rnorm(900, mean = 0, sd = 10),
-                    runif(100, min = -100, max = 0))
+                    runif(500, min = -100, max = 0))
       df <- data.frame(value = val_left)
     }
     return(df)
@@ -179,12 +180,12 @@ server <- function(input, output, session) {
       # Generate 900 random #s from a normal dist with mean and sd determined by user then append 100 uniform random #s (runif) to create positive skewness
     } else if (input$shape_dynamic == "Positively Skewed") {
       val_right <- c(rnorm(900, mean = input$mean_value_dynamic, sd = input$sd_value_dynamic),
-                     runif(100, min = input$mean_value_dynamic, max = input$mean_value_dynamic + 100)) # increasing positive skewness
+                     runif(500, min = input$mean_value_dynamic, max = input$mean_value_dynamic + 100)) # increasing positive skewness
       df <- data.frame(value = val_right)
       # Generate 900 random #s from a normal dist with mean and sd determined by user then append 100 uniform random #s (runif) to create negative skewness
     } else {
       val_left <- c(rnorm(900, mean = input$mean_value_dynamic, sd = input$sd_value_dynamic),
-                    runif(100, min = input$mean_value_dynamic - 100, max = input$mean_value_dynamic)) # increasing negative skewness
+                    runif(500, min = input$mean_value_dynamic - 100, max = input$mean_value_dynamic)) # increasing negative skewness
       df <- data.frame(value = val_left)
     }
     return(df)
@@ -192,10 +193,10 @@ server <- function(input, output, session) {
   
   output$hist <- renderPlot({
     ggplot(data = df()) +
-      geom_histogram(mapping = aes(x = value, fill = "Histogram"), color = "black", bins = 100) +
+      geom_histogram(mapping = aes(x = value, fill = "Histogram"), color = "black", bins = 50) +
       labs(x = "Value", y = "Frequency", title = "Histogram") +
-      geom_vline(mapping = aes(xintercept = mean(df()$value), color = "Mean")) +
-      geom_vline(mapping = aes(xintercept = median(df()$value), color = "Median")) +
+      geom_vline(mapping = aes(xintercept = mean(df()$value), color = "Mean"), size = 2) +
+      geom_vline(mapping = aes(xintercept = median(df()$value), color = "Median"), size = 2) +
       scale_color_manual("", values = c(Mean = "#D55E00", Median = "#0072B2")) +
       scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
       xlim(c(-100, 100)) +
@@ -204,10 +205,10 @@ server <- function(input, output, session) {
   
   output$hist_dynamic <- renderPlot({
     ggplot(data = df_dynamic()) +
-      geom_histogram(mapping = aes(x = value, fill = "Histogram"), color = "black", bins = 100) +
+      geom_histogram(mapping = aes(x = value, fill = "Histogram"), color = "black", bins = 50) +
       labs(x = "Value", y = "Frequency", title = "Histogram") +
-      geom_vline(mapping = aes(xintercept = mean(df_dynamic()$value), color = "Mean")) +
-      geom_vline(mapping = aes(xintercept = median(df_dynamic()$value), color = "Median")) +
+      geom_vline(mapping = aes(xintercept = mean(df_dynamic()$value), color = "Mean"), size = 2) +
+      geom_vline(mapping = aes(xintercept = median(df_dynamic()$value), color = "Median"), size = 2) +
       scale_color_manual("", values = c(Mean = "#D55E00", Median = "#0072B2")) +
       scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
       xlim(c(-100, 100)) +
@@ -219,8 +220,8 @@ server <- function(input, output, session) {
       geom_boxplot(mapping = aes(x = value, fill = "Boxplot"), color = "black") +
       theme(axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
       labs(x = "Value", y = "", title = "Boxplot") +
-      geom_vline(mapping = aes(xintercept = mean(df()$value), color = "Mean")) +
-      geom_vline(mapping = aes(xintercept = median(df()$value), color = "Median")) +
+      geom_vline(mapping = aes(xintercept = mean(df()$value), color = "Mean"), size = 2) +
+      geom_vline(mapping = aes(xintercept = median(df()$value), color = "Median"), size = 2) +
       scale_color_manual("", values = c(Mean = "#D55E00", Median = "#0072B2")) +
       scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
       xlim(c(-100, 100)) +
@@ -232,8 +233,8 @@ server <- function(input, output, session) {
       geom_boxplot(mapping = aes(x = value, fill = "Boxplot"), color = "black") +
       theme(axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
       labs(x = "Value", y = "", title = "Boxplot") +
-      geom_vline(mapping = aes(xintercept = mean(df_dynamic()$value), color = "Mean")) + # Calculate mean dynamically
-      geom_vline(mapping = aes(xintercept = median(df_dynamic()$value), color = "Median")) +
+      geom_vline(mapping = aes(xintercept = mean(df_dynamic()$value), color = "Mean"), size = 2) + # Calculate mean dynamically
+      geom_vline(mapping = aes(xintercept = median(df_dynamic()$value), color = "Median"), size = 2) +
       scale_color_manual("", values = c(Mean = "#D55E00", Median = "#0072B2")) +
       scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
       xlim(c(-100, 100)) +
