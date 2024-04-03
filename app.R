@@ -6,11 +6,12 @@
 # Required libraries
 library(sn)
 library(tidyverse)
+library(patchwork)
 library(mosaic)
 library(fGarch)
 library(shiny)
-################################################################################
  
+
 # user interface
 ui <- fluidPage(
   
@@ -70,21 +71,21 @@ ui <- fluidPage(
     
     tabPanel("Upload File",
              fluidRow(
-               column(6, align = "left", h4("Upload a CSV file")),
-               column(6, align = "left", h4("Choose a Variable")),
+               column(6, h4("Upload a CSV file")),
+               column(6, h4("Choose a Variable")),
                fluidRow(
+               
                  column(6, fileInput("file", "", accept = ".csv")),
                  column(6, selectInput("var", "", ""))
                ),
                fluidRow(
-                 column(6, plotOutput("uploaded_hist")),
-                 column(6, plotOutput("uploaded_boxplot")),
-                 column(3, tableOutput("uploaded_table"))
+                 column(6, plotOutput("uploaded_plot", width = "100%", height = "400px")),
+                 column(6, tableOutput("uploaded_table"))
+               )
              )
     )
   )
-))
-
+)
 
 # server function
 server <- function(input, output, session) {
@@ -92,62 +93,94 @@ server <- function(input, output, session) {
   uploaded_data <- reactive({
     req(input$file)
     df <- read.csv(input$file$datapath, header = TRUE)
-    # Filter quantitative variables
-    quantitative_vars <- names(df)[sapply(df, is.numeric)]
-    updateSelectInput(session, "var", choices = quantitative_vars)
+    updateSelectInput(session, "var", choices = names(df))
     return(df)
   })
   
-  
-  output$uploaded_hist <- renderPlot({
+  output$uploaded_plot <- renderPlot({
+    req(uploaded_data(), input$var)
+    
     data <- uploaded_data()
     
-    # Filter out missing and non-finite values
-    data <- data[complete.cases(data[[input$var]]) & is.finite(data[[input$var]]), ]
-    
-    ggplot(data = data, aes_string(x = input$var)) +
-      geom_histogram(mapping = aes(fill = "Histogram"), color = "black", bins = 45) +
-      labs(x = "Value", y = "Frequency", title = "Histogram") +
-      geom_vline(mapping = aes(xintercept = mean(data[[input$var]]), color = "Mean"), size = 2) +
-      geom_vline(mapping = aes(xintercept = median(data[[input$var]]), color = "Median"), size = 2) +
-      scale_color_manual("", values = c(Mean = "#D55E00", Median = "#0072B2")) +
-      scale_fill_manual("", values = c("#CC79A7"), guide = FALSE) +
-      theme(legend.position = "none")
+    if (is.numeric(data[[input$var]])) {
+      # Quantitative variable selected
+      data <- uploaded_data()
+      
+      # Filter out missing and non-finite values
+      data <- data[complete.cases(data[[input$var]]) & is.finite(data[[input$var]]), ]
+      
+     p <-  ggplot(data = data, aes_string(x = input$var)) +
+        geom_histogram(mapping = aes(fill = "Histogram"), color = "black", bins = 45) +
+        labs(x = "Value", y = "Frequency", title = "Histogram") +
+        geom_vline(mapping = aes(xintercept = mean(data[[input$var]]), color = "Mean"), size = 2) +
+        geom_vline(mapping = aes(xintercept = median(data[[input$var]]), color = "Median"), size = 2) +
+        scale_color_manual("", values = c(Mean = "#D55E00", Median = "#0072B2")) +
+        scale_fill_manual("", values = c("#CC79A7"), guide = FALSE) +
+        theme(legend.position = "none")
+      
+      bp <-  ggplot(data = data, aes_string(x = input$var)) +
+        geom_boxplot(color = "black", fill = "#CC79A7") +
+        geom_vline(mapping = aes(xintercept = mean(data[[input$var]]), color = "Mean"), size = 2) +
+        geom_vline(mapping = aes(xintercept = median(data[[input$var]]), color = "Median"), size = 2) +
+        scale_color_manual("", values = c(Mean = "#D55E00", Median = "#0072B2")) +
+        scale_fill_manual("", values = c("#CC79A7"), guide = FALSE) +
+        labs(x = "Value", y = " ", title = "Boxplot") +
+        theme(legend.position = "right")
+      
+      
+      # Set the height of each plot
+      p <- p + theme(plot.margin = margin(0, 0, 0, 0, "cm"))
+      bp <- bp + theme(plot.margin = margin(0, 0, 0, 0, "cm"))
+      
+      # Return the combined plots
+      gridExtra::grid.arrange(p, bp, nrow = 1)
+      
+    } else if (!is.numeric(data[[input$var]])) {
+      # Qualitative variable selected
+      ggplot(data = data, aes_string(x = input$var)) +
+        geom_bar(fill = "#CC79A7", color = "black") +
+        labs(x = "Value", y = "Frequency", title = "Bar Plot") +
+        theme(legend.position = "none")
+    } else {
+      # Non-numeric variable selected
+      ggplot() +
+        geom_point() +  # Placeholder plot to prevent the error
+        labs(title = "Invalid Variable Type Selected")
+    }
   })
   
-  output$uploaded_boxplot <- renderPlot({
-    data <- uploaded_data()
-    
-    # Filter out missing and non-finite values
-    data <- data[complete.cases(data[[input$var]]) & is.finite(data[[input$var]]), ]
-    
-    ggplot(data = data, aes_string(x = input$var)) +
-      geom_boxplot(color = "black", fill = "#CC79A7") +
-      geom_vline(mapping = aes(xintercept = mean(data[[input$var]]), color = "Mean"), size = 2) +
-      geom_vline(mapping = aes(xintercept = median(data[[input$var]]), color = "Median"), size = 2) +
-      scale_color_manual("", values = c(Mean = "#D55E00", Median = "#0072B2")) +
-      scale_fill_manual("", values = c("#CC79A7"), guide = FALSE) +
-      labs(x = "Value", y = " ", title = "Boxplot") +
-      theme(legend.position = "right")
-  })
-  
-  
- 
   output$uploaded_table <- renderTable({
     req(uploaded_data(), input$var)
     
-    # Filter out missing values 
-    data_summary <- summary(uploaded_data()[[input$var]], na.rm = TRUE)
-    data_iqr <- IQR(uploaded_data()[[input$var]], na.rm = TRUE)
-    data_range <- diff(range(uploaded_data()[[input$var]], na.rm = TRUE))
+    data <- uploaded_data()
     
-    atable <- data.frame(Summary = c("min", "Q1", "mean", "median", "Q3", "max", "IQR", "range"),
-                         Values = c(data_summary["Min."], data_summary["1st Qu."], data_summary["Mean"], data_summary["Median"],
-                                    data_summary["3rd Qu."], data_summary["Max."],
-                                    data_iqr,
-                                    data_range))
-    
-    atable
+    if (is.numeric(data[[input$var]])) {
+      # Quantitative variable selected
+      data_column <- data[[input$var]]
+      data_summary <- summary(data_column, na.rm = TRUE)
+      data_iqr <- IQR(data_column, na.rm = TRUE)
+      data_range <- diff(range(data_column, na.rm = TRUE))
+      
+      missing_count <- sum(is.na(data_column))
+      
+      atable <- data.frame(Summary = c("Min", "Q1", "Mean", "Median", "Q3", "Max", "IQR", "Range","Number of NA Observations"),
+                           Values = c(data_summary["Min."], data_summary["1st Qu."], data_summary["Mean"], data_summary["Median"],
+                                      data_summary["3rd Qu."], data_summary["Max."],
+                                      data_iqr,
+                                      data_range,
+                                      missing_count))
+      
+      return(atable)
+    } else if (!is.numeric(data[[input$var]])) {
+      # Qualitative variable selected
+      frequency_table <- table(data[[input$var]])
+      frequency_df <- as.data.frame(frequency_table)
+      names(frequency_df) <- c("Category", "Frequency")
+      return(frequency_df)
+    } else {
+      # Non-numeric variable selected
+      return(NULL)
+    }
   })
   
   set.seed(422024)
@@ -187,11 +220,11 @@ server <- function(input, output, session) {
     } else if (input$shape_dynamic == "Positively Skewed") {
       
       val_right <- c(rnorm(900, mean = 0, sd = 10),
-                    runif(500, min = input$mean_value_dynamic, max = input$mean_value_dynamic+25), 
-                    runif(400, min = input$mean_value_dynamic+25, max = input$mean_value_dynamic+50), 
-                    runif(50, min = input$mean_value_dynamic+50, max = input$mean_value_dynamic+75), 
-                    runif(300, min = input$mean_value_dynamic+50, max = input$mean_value_dynamic+100))
- 
+                     runif(500, min = input$mean_value_dynamic, max = input$mean_value_dynamic+25), 
+                     runif(400, min = input$mean_value_dynamic+25, max = input$mean_value_dynamic+50), 
+                     runif(50, min = input$mean_value_dynamic+50, max = input$mean_value_dynamic+75), 
+                     runif(300, min = input$mean_value_dynamic+50, max = input$mean_value_dynamic+100))
+      
       df <- data.frame(value = val_right)
       # Generate 900 random #s from a normal dist with mean and sd determined by user then append 600 uniform random #s (runif) to create negative skewness
     } else {
@@ -229,6 +262,8 @@ server <- function(input, output, session) {
       theme(legend.position = "right")
   })
   
+
+  
   output$boxplot <- renderPlot({
     ggplot(data = df()) +
       geom_boxplot(mapping = aes(x = value, fill = "Boxplot"), color = "black") +
@@ -257,9 +292,8 @@ server <- function(input, output, session) {
   
   # Summary Table for Fixed Mean and SD tab
   output$table <- renderTable({
-    
     res <- favstats(~ value, data=df())
-    ftable <- data.frame(Summary = c("min", "Q1", "mean", "median", "Q3", "max", "IQR", "range"),
+    ftable <- data.frame(Summary = c("Min", "Q1", "Mean", "Median", "Q3", "Max", "IQR", "Range"),
                          Values = c(round(res$min,3), round(res$Q1,3), round(res$mean,3), round(res$median,3), 
                                     round(res$Q3,3), round(res$max,3), 
                                     round(res$Q3,3) - round(res$Q1,3),
@@ -267,10 +301,8 @@ server <- function(input, output, session) {
     
     ftable
   })
-  
 }
-
 
 # Run the application
 shinyApp(ui = ui, server = server)
-########################################################################################################
+################################################################################
