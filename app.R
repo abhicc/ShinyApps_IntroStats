@@ -219,7 +219,7 @@ server <- function(input, output, session) {
       # Generate 900 random #s from a normal dist with mean and sd determined by user then append 600 uniform random #s (runif) to create positive skewness
     } else if (input$shape_dynamic == "Positively Skewed") {
       
-      val_right <- c(rnorm(900, mean = 0, sd = 10),
+      val_right <- c(rnorm(900, mean = input$mean_value_dynamic, sd = input$sd_value_dynamic),
                      runif(500, min = input$mean_value_dynamic, max = input$mean_value_dynamic+25), 
                      runif(400, min = input$mean_value_dynamic+25, max = input$mean_value_dynamic+50), 
                      runif(50, min = input$mean_value_dynamic+50, max = input$mean_value_dynamic+75), 
