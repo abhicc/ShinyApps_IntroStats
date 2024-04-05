@@ -15,31 +15,21 @@ ui <- fluidPage(
   titlePanel("Simulated Confidence Intervals"),
   # Sidebar with a numeric input for month
   fluidRow(
-    
-    column(3,
+    column(12,
            selectInput(inputId = "context",
-                        label = "Select a context:",
-                        choices = c("One Proportion", "One Mean"),
-                        selected = "One Proportion")),
-    
-    column(3,
+                       label = "Statistic:",
+                       choices = c("One Proportion", "One Mean"),
+                       selected = "One Proportion"),
            textInput(inputId = "true_value",
-                        label = "Write a value for the 'true' parameter:",
-                        value = "")),
-    
-    column(3,
-           sliderInput(inputId = "sample_size",
-                       label = "Choose a sample size",
-                       min = 25,
-                       max = 300,
-                       value = 25,
-                       step = 25)),
-    
-    column(3,
-           radioButtons(inputId = "numCI",
-                        label = "Choose how many CIs to generate",
-                        choices = c(1, 100, 1000),
-                        selected = 1))
+                     label = "Write a value for the 'true' parameter:",
+                     value = ""),
+           textInput(inputId = "sample_size",
+                     label = "Sample size (n):",
+                     value = ""),
+           textInput(inputId = "numCI",
+                     label = "Number of intervals:",
+                     value = "")
+    )
   ),
   # Show a plot of the generated distribution
   
