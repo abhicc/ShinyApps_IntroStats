@@ -110,7 +110,7 @@ server <- function(input, output, session) {
       data <- data[complete.cases(data[[input$var]]) & is.finite(data[[input$var]]), ]
       
      p <-  ggplot(data = data, aes_string(x = input$var)) +
-        geom_histogram(mapping = aes(fill = "Histogram"), color = "black", bins = 45) +
+        geom_histogram(mapping = aes(fill = "Histogram"), color = "black", bins = 30) +
         labs(x = "Value", y = "Frequency", title = "Histogram") +
         geom_vline(mapping = aes(xintercept = mean(data[[input$var]]), color = "Mean"), size = 2) +
         geom_vline(mapping = aes(xintercept = median(data[[input$var]]), color = "Median"), size = 2) +
