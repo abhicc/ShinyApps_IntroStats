@@ -135,7 +135,7 @@ server <- function(input, output, session) {
       # Return the combined plots
       gridExtra::grid.arrange(p, bp, nrow = 1)
       
-    } else if (!is.numeric(data[[input$var]])) {
+    } else if (!is.numeric(data[[input$var]]) || (is.numeric(data[[input$var]]) && length(unique(data[[input$var]])) < 10)) {
       # Qualitative variable selected
       ggplot(data = data, aes_string(x = input$var)) +
         geom_bar(fill = "#CC79A7", color = "black") +
