@@ -9,6 +9,14 @@ library(tidyverse)
 library(mosaic)
 library(shiny)
 library(shiny)
+library(shiny)
+library(shiny)
+
+
+
+
+
+library(shiny)
 
 theta <- seq(0, 2 * pi, length.out = 100)
 
@@ -17,24 +25,26 @@ ui <- fluidPage(
   fluidRow(
     column(
       width = 4,
-      plotOutput("scatter_plot1"),
-
+      plotOutput("scatter_plot1")
     ),
     column(
       width = 4,
-
       plotOutput("scatter_plot2")
     ),
     column(
       width = 4,
       numericInput("sample_size", "Sample Size:", value = 5, min = 1, max = 20),
       selectInput("sample_type", "Sample Type:", choices = c("Random Sampling", "Stratified Sampling", "Cluster Sampling")),
+      uiOutput("cluster_input"),
       actionButton("sample_btn", "Sample")
     )
   )
 )
 
 server <- function(input, output) {
+  # Initialize num_clusters with a default value
+  num_clusters <- reactiveVal(3)
+  
   # Generate random coordinates within the circle
   plot_data <- reactive({
     num_points <- 50
@@ -83,8 +93,8 @@ server <- function(input, output) {
         text(plot_data_df$x[i], plot_data_df$y[i], labels = plot_data_df$numbers[i], cex = 1.2, col = color)
       }
       
-      # Perform k-means clustering
-      clusters_data <- kmeans(plot_data_df[, c("x", "y")], centers = 3)
+      # Perform k-means clustering using num_clusters
+      clusters_data <- kmeans(plot_data_df[, c("x", "y")], centers = num_clusters())
       clusters(clusters_data$cluster)
       
       # Plot clusters with organic boundaries
@@ -149,6 +159,14 @@ server <- function(input, output) {
     # Draw circle around the cluster of numbers
     lines(1.9 * cos(theta), 1.9 * sin(theta), col = "black", lwd = 2)
   })
+  
+  output$cluster_input <- renderUI({
+    if (input$sample_type == "Cluster Sampling") {
+      numericInput("num_clusters", "Number of Clusters:", value = 3, min = 1)
+    }
+  })
 }
 
 shinyApp(ui = ui, server = server)
+
+
