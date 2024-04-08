@@ -21,7 +21,7 @@ library(shiny)
 theta <- seq(0, 2 * pi, length.out = 100)
 
 ui <- fluidPage(
-  titlePanel("Sampling Visualization"),
+  titlePanel("Sampling Methods"),
   fluidRow(
     column(
       width = 4,
@@ -33,7 +33,7 @@ ui <- fluidPage(
     ),
     column(
       width = 4,
-      numericInput("sample_size", "Sample Size:", value = 5, min = 1, max = 20),
+      sliderInput("sample_size", "Sample Size:", value = 5, min = 1, max = 20),
       selectInput("sample_type", "Sample Type:", choices = c("Random Sampling", "Stratified Sampling", "Cluster Sampling")),
       uiOutput("cluster_input"),
       actionButton("sample_btn", "Sample")
@@ -60,7 +60,7 @@ server <- function(input, output, session) {
   stratified_colors_df <- reactiveVal(NULL)
   cluster_colors_df <- reactiveVal(NULL)
   clusters <- reactiveVal(NULL)
-  cluster_lines <- reactiveVal(NULL)
+  cluster_lines <- reactiveVal(list()) # Initialize with an empty list
   
   observeEvent(input$num_clusters, {
     num_clusters(input$num_clusters)
@@ -69,7 +69,7 @@ server <- function(input, output, session) {
   output$scatter_plot1 <- renderPlot({
     plot_data_df <- plot_data()
     # Plot scatter plot with numbers
-    plot(plot_data_df$x, plot_data_df$y, type = "n", xlab = "", ylab = "", xlim = c(-1.8, 1.8), ylim = c(-1.8, 1.8), main = "Population", axes = FALSE, asp = 1)
+    plot(plot_data_df$x, plot_data_df$y, type = "n", xlab = "", ylab = "", xlim = c(-1.8, 1.8), ylim = c(-1.8, 1.8), main = "Population (N)", axes = FALSE, asp = 1)
     
     if (input$sample_type == "Stratified Sampling") {
       if (is.null(stratified_colors_df())) {
@@ -135,7 +135,7 @@ server <- function(input, output, session) {
     sample_data <- plot_data_df[plot_data_df$numbers %in% sample_numbers, ]
     
     # Plot sampled subset
-    plot(sample_data$x, sample_data$y, type = "n", xlab = "", ylab = "", xlim = c(-1.8, 1.8), ylim = c(-1.8, 1.8), main = "Sampled Subset", axes = FALSE, asp = 1)
+    plot(sample_data$x, sample_data$y, type = "n", xlab = "", ylab = "", xlim = c(-1.8, 1.8), ylim = c(-1.8, 1.8), main = "Sampled Subset (n)", axes = FALSE, asp = 1)
     
     if (input$sample_type == "Stratified Sampling") {
       assigned_colors <- stratified_colors_df()
@@ -180,18 +180,12 @@ server <- function(input, output, session) {
     lines(1.9 * cos(theta), 1.9 * sin(theta), col = "black", lwd = 2)
   })
   
-  
-  
-  
-  
-  
-  
   output$cluster_input <- renderUI({
     if (input$sample_type == "Cluster Sampling") {
       sliderInput("num_clusters", "Number of Clusters:", min = 2, max = 5, value = 3)
     }
   })
-    
 }
+
 
 shinyApp(ui = ui, server = server)
