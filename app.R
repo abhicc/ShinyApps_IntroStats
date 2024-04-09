@@ -114,16 +114,16 @@ server <- function(input, output, session) {
         labs(x = "Value", y = "Frequency", title = "Histogram") +
         geom_vline(mapping = aes(xintercept = mean(data[[input$var]]), color = "Mean"), size = 2) +
         geom_vline(mapping = aes(xintercept = median(data[[input$var]]), color = "Median"), size = 2) +
-        scale_color_manual("", values = c(Mean = "#D55E00", Median = "#0072B2")) +
-        scale_fill_manual("", values = c("#CC79A7"), guide = FALSE) +
+        scale_color_manual("", values = c(Mean = "#D55E00", Median = "#882255")) +
+        scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
         theme(legend.position = "none")
       
       bp <-  ggplot(data = data, aes_string(x = input$var)) +
-        geom_boxplot(color = "black", fill = "#CC79A7") +
+        geom_boxplot(color = "black", fill = "#56B4E9") +
         geom_vline(mapping = aes(xintercept = mean(data[[input$var]]), color = "Mean"), size = 2) +
         geom_vline(mapping = aes(xintercept = median(data[[input$var]]), color = "Median"), size = 2) +
-        scale_color_manual("", values = c(Mean = "#D55E00", Median = "#0072B2")) +
-        scale_fill_manual("", values = c("#CC79A7"), guide = FALSE) +
+        scale_color_manual("", values = c(Mean = "#D55E00", Median = "#882255")) +
+        scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
         labs(x = "Value", y = " ", title = "Boxplot") +
         theme(legend.position = "right")
       
@@ -138,7 +138,7 @@ server <- function(input, output, session) {
     } else if (!is.numeric(data[[input$var]]) || (is.numeric(data[[input$var]]) && length(unique(data[[input$var]])) < 10)) {
       # Qualitative variable selected
       ggplot(data = data, aes_string(x = input$var)) +
-        geom_bar(fill = "#CC79A7", color = "black") +
+        geom_bar(fill = "#56B4E9", color = "black") +
         labs(x = "Value", y = "Frequency", title = "Bar Plot") +
         theme(legend.position = "none")
     } else {
@@ -245,8 +245,8 @@ server <- function(input, output, session) {
       labs(x = "Value", y = "Density", title = "Histogram with Density Plot") +
       geom_vline(mapping = aes(xintercept = mean(df()$value), color = "Mean"), size = 2) +
       geom_vline(mapping = aes(xintercept = median(df()$value), color = "Median"), size = 2) +
-      scale_color_manual("", values = c(Mean = "#D55E00", Median = "#0072B2")) +
-      scale_fill_manual("", values = c("#CC79A7"), guide = FALSE) +
+      scale_color_manual("", values = c(Mean = "#D55E00", Median = "#882255")) +
+      scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
       xlim(c(-100, 100)) +
       theme(legend.position = "right")
   })
@@ -259,8 +259,8 @@ server <- function(input, output, session) {
       labs(x = "Value", y = "Density", title = "Histogram with Density Plot") +
       geom_vline(mapping = aes(xintercept = mean(df_dynamic()$value), color = "Mean"), size = 2) +
       geom_vline(mapping = aes(xintercept = median(df_dynamic()$value), color = "Median"), size = 2) +
-      scale_color_manual("", values = c(Mean = "#D55E00", Median = "#0072B2")) +
-      scale_fill_manual("", values = c("#CC79A7"), guide = FALSE) +
+      scale_color_manual("", values = c(Mean = "#D55E00", Median = "#882255")) +
+      scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
       xlim(c(-100, 100)) +
       theme(legend.position = "right")
   })
@@ -274,8 +274,8 @@ server <- function(input, output, session) {
       labs(x = "Value", y = "", title = "Boxplot") +
       geom_vline(mapping = aes(xintercept = mean(df()$value), color = "Mean"), size = 2) +
       geom_vline(mapping = aes(xintercept = median(df()$value), color = "Median"), size = 2) +
-      scale_color_manual("", values = c(Mean = "#D55E00", Median = "#0072B2")) +
-      scale_fill_manual("", values = c("#CC79A7"), guide = FALSE) +
+      scale_color_manual("", values = c(Mean = "#D55E00", Median = "#882255")) +
+      scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
       xlim(c(-100, 100)) +
       theme(legend.position = "right")
   })
@@ -287,8 +287,8 @@ server <- function(input, output, session) {
       labs(x = "Value", y = "", title = "Boxplot") +
       geom_vline(mapping = aes(xintercept = mean(df_dynamic()$value), color = "Mean"), size = 2) + # Calculate mean dynamically
       geom_vline(mapping = aes(xintercept = median(df_dynamic()$value), color = "Median"), size = 2) +
-      scale_color_manual("", values = c(Mean = "#D55E00", Median = "#0072B2")) +
-      scale_fill_manual("", values = c("#CC79A7"), guide = FALSE) +
+      scale_color_manual("", values = c(Mean = "#D55E00", Median = "#882255")) +
+      scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
       xlim(c(-100, 100)) +
       theme(legend.position = "right")
   })
