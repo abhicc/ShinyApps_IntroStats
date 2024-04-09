@@ -20,19 +20,22 @@ ui <- fluidPage(
                        label = "Statistic:",
                        choices = c("One Proportion", "One Mean"),
                        selected = "One Proportion"),
-           textInput(inputId = "true_value",
-                     label = "Write a value for the 'true' parameter:",
-                     value = ""),
-           textInput(inputId = "sample_size",
-                     label = "Sample size (n):",
-                     value = ""),
-           textInput(inputId = "numCI",
-                     label = "Number of intervals:",
-                     value = "")
+           sliderInput(inputId = "true_value",
+                       label = "True parameter value:",
+                       min = ifelse(input$context == "One Proportion", 0, -10),
+                       max = ifelse(input$context == "One Proportion", 1, 10),
+                       value = 0.5),
+           
+           sliderInput(inputId = "sample_size",
+                       label = "Sample size (n):",
+                       min = 1, max = 100, value = 50),
+           sliderInput(inputId = "numCI",
+                       label = "Number of intervals:",
+                       min = 1, max = 100, value = 50),
+           actionButton("generate_btn", "Generate Graphs")  # Button to trigger graph generation
     )
   ),
   # Show a plot of the generated distribution
-  
   fluidRow(
     column(4, 
            plotOutput("hist")),
@@ -44,88 +47,71 @@ ui <- fluidPage(
 )
 
 
-server <- function(input, output) {
+
+
+
+
+
+server <- function(input, output, session) {
   
+  # Define a reactive function to generate the data frame
   df <- reactive({
     
-    if(input$context == "One Proportion")
-    {
-      ss <- input$sample_size
-      tv <- input$true_value
-      nCI <- input$numCI
-      
-      CIdf <- matrix(NA, nrow = nCI, ncol = 2)
-      
-      for(i in 1:nCI)
-      {
-        responses <- rbernoulli(n = ss, p = tv)
-        
-        df <- matrix(NA, nrow = 1000, ncol = ss + 1)
-        
-        for(i in 1:nrow(df))
-        {
-          df[i,1:ss] = resample(responses, replace = TRUE)
-          df[i, ss+1] = sum(df[i, 1:ss])/ss
-        }
-        
-        CIdf[i, 1] = as.numeric(quantile(df[,ss+1], probs = c(0.025, 0.975))[1])
-        CIdf[i, 2] = as.numeric(quantile(df[,ss+1], probs = c(0.025, 0.975))[2])
-      }
-      
-    }
-    else if (input$context == "One Mean")
-    {
-      val_right <- rsnorm(1000, mean = input$mean_value, sd = input$sd_value, xi = 3)
-      df <- data.frame(value = val_right)
-    }
-    else 
-    {
-      val_left <- rsnorm(1000, mean = input$mean_value, sd = input$sd_value, xi = -3)  
-      df <- data.frame(value = val_left)
+    ss <- as.integer(input$sample_size)
+    tv <- as.numeric(input$true_value)
+    nCI <- as.integer(input$numCI)
+    
+    # Generate empty matrix to store confidence intervals
+    confidence_intervals <- matrix(NA, nrow = nCI, ncol = 2)
+    
+    # Simulate confidence intervals
+    for (i in 1:nCI) {
+      # Generate sample data
+      sample_data <- rbinom(ss, 1, tv)
+      # Calculate sample proportion
+      sample_proportion <- mean(sample_data)
+      # Calculate standard error
+      se <- sqrt(sample_proportion * (1 - sample_proportion) / ss)
+      # Calculate margin of error
+      margin_of_error <- qnorm(0.975) * se
+      # Calculate confidence interval
+      confidence_intervals[i, ] <- c(sample_proportion - margin_of_error, sample_proportion + margin_of_error)
     }
     
-    # val_right <- c(val, tail(val[order(val)], 100) + rnorm(100, mean=input$mean_value+10, sd=2))
-    # val_transform <- log10(val); df <- data.frame(val_transform)
-    return(df)
+    print(confidence_intervals)  # Debugging: Print confidence intervals
+    return(confidence_intervals)
   })
   
-  
+  # Render the histogram plot
   output$hist <- renderPlot({
+    req(df())  # Ensure df() is not NULL before rendering plot
     
-    ggplot(data = df()) +
-      geom_histogram(mapping = aes(x = value), color = "black", fill = "lightgreen", bins = 100) +
-      labs(x = "Value", y = "Frequency", title = "Histogram") +
-      # geom_vline(mapping = aes(xintercept = mean(df()$value)), color = "red")+
-      # geom_vline(mapping = aes(xintercept = median(df()$value)), color = "blue", linetype = 3) +
-      xlim(c(-100, 100))
+    # Create a data frame for plotting
+    df_plot <- data.frame(Interval = 1:nrow(df()),
+                          Lower = df()[, 1],
+                          Upper = df()[, 2])
     
-  })
-  
-  output$boxplot <- renderPlot({
-    
-    ggplot(data = df()) +
-      geom_boxplot(mapping = aes(x = value), color = "black", fill = "lightgreen") +
-      theme(axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
-      labs(x = "Value", y = "", title = "Boxplot") +
-      xlim(c(-100, 100))
-    
+    # Plot the confidence intervals
+    ggplot(df_plot, aes(x = Interval)) +
+
+            geom_segment(aes(x = Interval, xend = Interval, y = Lower, yend = Upper), color = "black") +
+      coord_flip() +
+      labs(x = "Interval Number", y = "Confidence Interval", title = "Simulated Confidence Intervals") +
+      scale_x_continuous(expand = c(0, 0))
   })
   
   
   
+  # Render the table
   output$table <- renderTable({
-    
-    res <- favstats(~ value, data=df())
-    ftable <- data.frame(Summary = c("min", "Q1", "median", "Q3", "max", "IQR", "range"),
-                         Values = c(round(res$min,3), round(res$Q1,3), round(res$median,3), 
-                                    round(res$Q3,3), round(res$max,3), 
-                                    round(res$Q3,3) - round(res$Q1,3),
-                                    round(res$max,3) - round(res$min,3)))
-    
-    ftable
+    req(df())  # Ensure df() is not NULL before rendering table
+    # Create a data frame for the table
+    data.frame(Interval = 1:nrow(df()), Lower = df()[, 1], Upper = df()[, 2])
   })
   
 }
+
+
 
 
 # Run the application
