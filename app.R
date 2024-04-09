@@ -239,9 +239,10 @@ server <- function(input, output, session) {
   })
   
   output$hist <- renderPlot({
-    ggplot(data = df()) +
-      geom_histogram(mapping = aes(x = value, fill = "Histogram"), color = "black", bins = 45) +
-      labs(x = "Value", y = "Frequency", title = "Histogram") +
+    ggplot(data = df(), aes(x = value)) +
+      geom_histogram(mapping = aes(y = ..density.., fill = "Histogram"), color = "black", bins = 45) +
+      geom_density(color = "black", alpha = 0.5, size = 1.5) + # Add density plot
+      labs(x = "Value", y = "Density", title = "Histogram with Density Plot") +
       geom_vline(mapping = aes(xintercept = mean(df()$value), color = "Mean"), size = 2) +
       geom_vline(mapping = aes(xintercept = median(df()$value), color = "Median"), size = 2) +
       scale_color_manual("", values = c(Mean = "#D55E00", Median = "#0072B2")) +
@@ -250,10 +251,12 @@ server <- function(input, output, session) {
       theme(legend.position = "right")
   })
   
+  
   output$hist_dynamic <- renderPlot({
-    ggplot(data = df_dynamic()) +
-      geom_histogram(mapping = aes(x = value, fill = "Histogram"), color = "black", bins = 45) +
-      labs(x = "Value", y = "Frequency", title = "Histogram") +
+    ggplot(data = df_dynamic(), aes(x = value)) +
+      geom_histogram(mapping = aes(y = ..density.., fill = "Histogram"), color = "black", bins = 45) +
+      geom_density(color = "black", alpha = 0.5, size = 1.5) + # Add density plot
+      labs(x = "Value", y = "Density", title = "Histogram with Density Plot") +
       geom_vline(mapping = aes(xintercept = mean(df_dynamic()$value), color = "Mean"), size = 2) +
       geom_vline(mapping = aes(xintercept = median(df_dynamic()$value), color = "Median"), size = 2) +
       scale_color_manual("", values = c(Mean = "#D55E00", Median = "#0072B2")) +
