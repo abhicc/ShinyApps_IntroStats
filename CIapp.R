@@ -22,10 +22,7 @@ ui <- fluidPage(
                        selected = "One Proportion"),
            sliderInput(inputId = "true_value",
                        label = "True parameter value:",
-                       min = ifelse(input$context == "One Proportion", 0, -10),
-                       max = ifelse(input$context == "One Proportion", 1, 10),
-                       value = 0.5),
-           
+                       min = 0, max = 1, value = 0.5),
            sliderInput(inputId = "sample_size",
                        label = "Sample size (n):",
                        min = 1, max = 100, value = 50),
@@ -93,8 +90,8 @@ server <- function(input, output, session) {
     
     # Plot the confidence intervals
     ggplot(df_plot, aes(x = Interval)) +
-
-            geom_segment(aes(x = Interval, xend = Interval, y = Lower, yend = Upper), color = "black") +
+      
+      geom_segment(aes(x = Interval, xend = Interval, y = Lower, yend = Upper), color = "black") +
       coord_flip() +
       labs(x = "Interval Number", y = "Confidence Interval", title = "Simulated Confidence Intervals") +
       scale_x_continuous(expand = c(0, 0))
