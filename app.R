@@ -68,9 +68,12 @@ ui <- fluidPage(
     
     tabPanel("Upload File",
              fluidRow(
-               column(4, 
+               column(12, HTML("<br>")), # Add a blank row
+             ),
+             fluidRow(
+               column(5,
                       sidebarPanel(
-                        h4("Choose Dataset or Upload a CSV file"),
+                    
                         radioButtons("data_choice", "Select Data Source:", 
                                      choices = c( "Upload CSV File", "Preloaded Dataset"),
                                      selected = "Upload CSV File"),
@@ -79,9 +82,9 @@ ui <- fluidPage(
                           fileInput("file", "", accept = ".csv")
                         ),
                         uiOutput("dataset_select"),
-                        uiOutput("variable_select")
+                        uiOutput("variable_select"), width = 10
                       )),
-               column(8, 
+               column(7,
                       uiOutput("data_plot"),
                       tableOutput("data_table")
                )
