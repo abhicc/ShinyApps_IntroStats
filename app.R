@@ -12,6 +12,7 @@ library(fGarch)
 library(shiny)
 
 # UI code
+# UI code
 ui <- fluidPage(
   titlePanel("Summarizing Numerical Data: Visualizing Mean and Median"),
   tabsetPanel(
@@ -63,13 +64,12 @@ ui <- fluidPage(
                         radioButtons("data_choice", "Select Data Source:", 
                                      choices = c("Preloaded Dataset", "Upload CSV File"),
                                      selected = "Preloaded Dataset"),
-                        uiOutput("dataset_select"),
-                        uiOutput("preloaded_variable_select"), 
-                        uiOutput("uploaded_variable_select"),   
                         conditionalPanel(
-                          condition = "input.data_choice == 'Upload CSV File'",
+                          condition = "input.data_choice != 'Preloaded Dataset'",
                           fileInput("file", "", accept = ".csv")
-                        )
+                        ),
+                        uiOutput("dataset_select"),
+                        uiOutput("variable_select")
                       )),
                column(9, 
                       mainPanel(
@@ -80,6 +80,7 @@ ui <- fluidPage(
     )
   )
 )
+
 
 # server function
 server <- function(input, output, session) {
@@ -101,10 +102,10 @@ server <- function(input, output, session) {
     }
   }, ignoreInit = TRUE)
   
-  observeEvent(input$dataset, {
+  observe({
     req(input$dataset)
-    updateSelectInput(session, "preloaded_var", choices = names(data_selected()))
-  }, ignoreInit = TRUE)
+    updateSelectInput(session, "variable_select", choices = names(data_selected()))
+  })
   
   uploaded_data <- reactive({
     req(data_selected())
@@ -168,8 +169,8 @@ server <- function(input, output, session) {
         
         missing_count <- sum(is.na(data_column))
         
-        atable <- data.frame(Summary = c("Min", "Q1", "Mean", "Median", "Q3", "Max", "IQR", "Range","Number of NA Observations"),
-                             Values = c(data_summary["Min."], data_summary["1st Qu."], data_summary["Mean"], data_summary["Median"],
+        atable <- data.frame(Summary = c("Min", "Q1", "Mean", "Median", "Q3", "Max", "IQR", "Range", "Number of NA Observations"),
+                             Values = c(data_summary["Min."], data_summary["1st Qu."], mean(data_column), data_summary["Median"],
                                         data_summary["3rd Qu."], data_summary["Max."],
                                         data_iqr,
                                         data_range,
@@ -201,12 +202,22 @@ server <- function(input, output, session) {
   })
   
   output$variable_select <- renderUI({
-    if (input$data_choice == "Upload CSV File" && !is.null(input$dataset_select)) {
-      return(selectInput("var", "Choose a Variable", choices = NULL))
+    if (input$data_choice == "Preloaded Dataset") {
+      if (!is.null(input$dataset)) {
+        return(selectInput("var", "Choose a Variable", choices = names(get(input$dataset))))
+      } else {
+        return(NULL)
+      }
     } else {
-      return(NULL)
+      if (!is.null(input$file)) {
+        df <- read.csv(input$file$datapath)
+        return(selectInput("var", "Choose a Variable", choices = names(df)))
+      } else {
+        return(NULL)
+      }
     }
   })
+  
   
   set.seed(422024)
   df <- reactive({
@@ -314,5 +325,9 @@ server <- function(input, output, session) {
       theme(legend.position = "right")
   })
 }
+
+
+
+
 
 shinyApp(ui = ui, server = server)
