@@ -90,9 +90,11 @@ server <- function(input, output) {
       geom_point(data = do.call(rbind, ci_data), 
                  mapping = aes(y = y, x = x), color = "#009E73") +
       labs(title = "Confidence Intervals",
-           x = "Population Mean",
+           x = "Mean",
            y = "Interval") +
-      theme_minimal()
+      theme_minimal() +
+      theme(axis.text.y = element_blank(),  # Hide y-axis text
+            axis.title.y = element_blank()) # Hide y-axis label
     
     ggplotly(gg) # for converting ggplot2 figures into interactive ones powered by plotly (using js code)
   })
