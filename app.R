@@ -1,9 +1,17 @@
+
 ################################################################################
 # This app demonstrates the concept of skewness (symmetricity) in terms of 
 # histograms and boxplots. It also demonstrates how the mean and standard deviation
 # affects these plots, and how numerical summaries are affected by extreme outliers.
 ################################################################################
 
+HappyPlanetIndex <- read.csv("HappyPlanetIndex.csv")
+RestaurantTips <- read.csv("RestaurantTips.csv")
+FloridaLakes <- read.csv("FloridaLakes.csv")
+SleepStudy <- read.csv("SleepStudy.csv")
+StudentSurvey <- read.csv("StudentSurvey.csv")
+USStates <- read.csv("USStates1e.csv")
+HomesForSale <- read.csv("HomesForSale.csv")
 
 library(sn)
 library(tidyverse)
@@ -11,6 +19,8 @@ library(patchwork)
 library(mosaic)
 library(fGarch)
 library(shiny)
+
+# UI code
 
 # UI code
 ui <- fluidPage(
@@ -58,12 +68,12 @@ ui <- fluidPage(
     
     tabPanel("Upload File",
              fluidRow(
-               column(3, 
+               column(6, 
                       sidebarPanel(
                         h4("Choose Dataset or Upload a CSV file"),
                         radioButtons("data_choice", "Select Data Source:", 
-                                     choices = c("Preloaded Dataset", "Upload CSV File"),
-                                     selected = "Preloaded Dataset"),
+                                     choices = c( "Upload CSV File", "Preloaded Dataset"),
+                                     selected = "Upload CSV File"),
                         conditionalPanel(
                           condition = "input.data_choice != 'Preloaded Dataset'",
                           fileInput("file", "", accept = ".csv")
@@ -71,10 +81,10 @@ ui <- fluidPage(
                         uiOutput("dataset_select"),
                         uiOutput("variable_select")
                       )),
-               column(9, 
+               column(6, 
                       mainPanel(
-                        plotOutput("dataset_plot", width = "100%", height = "400px"),
-                        tableOutput("dataset_table")
+                        plotOutput("upload_plot", width = "100%", height = "400px"),
+                        tableOutput("upload_table")
                       ))
              )
     )
@@ -86,7 +96,7 @@ server <- function(input, output, session) {
   
   output$dataset_select <- renderUI({
     if (input$data_choice == "Preloaded Dataset") {
-      return(selectInput("dataset", "Choose a Dataset", choices = c("mtcars", "iris"), selected = "mtcars"))
+      return(selectInput("dataset", "Choose a Dataset", choices = c("HappyPlanetIndex", "USStates", "SleepStudy", "StudentSurvey", "RestaurantTips","HomesForSale", "FloridaLakes" ), selected = "HappyPlanetIndex"))
     } else {
       return(NULL)
     }
@@ -110,68 +120,117 @@ server <- function(input, output, session) {
   })
   
   output$dataset_plot <- renderPlot({
+    req(input$var, input$data_choice, input$dataset)
+    
+    print("Dataset plot rendering started...")
+    
     if (input$data_choice == "Preloaded Dataset") {
-      req(input$var)
+      print("Using preloaded dataset...")
       
       data <- get(input$dataset)
       
-      if (is.numeric(data[[input$var]])) {
-        # Quantitative variable selected
-        data_column <- data[[input$var]]
-        data <- data[complete.cases(data_column) & is.finite(data_column), ]
+      if (!is.null(data)) {
+        print("Data is not null...")
         
-        # Create histogram plot
-        p <- ggplot(data = data, aes_string(x = input$var)) +
-          geom_histogram(mapping = aes(y = ..density.., fill = "Histogram"), color = "black", bins = 30) +
-          geom_density(color = "black", alpha = 0.5, size = 1.5) +
-          labs(x = "Value", y = "Density", title = "Histogram with Density Plot") +
-          geom_vline(mapping = aes(xintercept = mean(data_column), color = "Mean"), size = 2) +
-          geom_vline(mapping = aes(xintercept = median(data_column), color = "Median"), size = 2) +
-          scale_color_manual("", values = c(Mean = "#D55E00", Median = "#0072B2")) +
-          scale_fill_manual("", values = c("#CC79A7"), guide = FALSE) +
-          theme(legend.position = "none")
-        
-        return(p)
+        if (input$var %in% names(data)) {
+          print("Variable found in dataset...")
+          
+          data_column <- data[[input$var]]
+          data <- data[complete.cases(data_column) & is.finite(data_column), ]
+          
+          if (is.numeric(data_column)) {
+            print("Numeric variable selected...")
+            
+            p <- ggplot(data = data, aes_string(x = input$var)) +
+              geom_histogram(mapping = aes(y = ..density.., fill = "Histogram"), color = "black", bins = 30) +
+              geom_density(color = "black", alpha = 0.5, size = 1.5) +
+              labs(x = "Value", y = "Density", title = "Histogram with Density Plot") +
+              geom_vline(mapping = aes(xintercept = mean(data_column), color = "Mean"), size = 2) +
+              geom_vline(mapping = aes(xintercept = median(data_column), color = "Median"), size = 2) +
+              scale_color_manual("", values = c(Mean = "#D55E00", Median = "#0072B2")) +
+              scale_fill_manual("", values = c("#CC79A7"), guide = FALSE) +
+              theme(legend.position = "none")
+            
+            print("Plot created successfully...")
+            
+            return(p)
+          } else {
+            print("Non-numeric variable selected...")
+            # Non-numeric variable selected
+            return(NULL)
+          }
+        } else {
+          print("Variable not found in dataset...")
+          # Dataset or variable not found
+          return(NULL)
+        }
       } else {
-        # Non-numeric variable selected
+        print("Data is null...")
+        # Dataset is null
         return(NULL)
       }
     } else {
+      print("No preloaded dataset selected...")
+      # No preloaded dataset selected
       return(NULL)
     }
   })
   
+  
+  
+  
+  
   output$dataset_table <- renderTable({
+    req(input$var, input$data_choice, input$dataset)
+    
+    print("Dataset table rendering started...")
+    print(input$dataset)
+    
     if (input$data_choice == "Preloaded Dataset") {
-      req(input$var)
+      print("Using preloaded dataset...")
       
       data <- get(input$dataset)
       
-      if (is.numeric(data[[input$var]])) {
-        # Quantitative variable selected
-        data_column <- data[[input$var]]
-        data_summary <- summary(data_column, na.rm = TRUE)
-        data_iqr <- IQR(data_column, na.rm = TRUE)
-        data_range <- diff(range(data_column, na.rm = TRUE))
+      if (!is.null(data)) {
+        print("Data is not null...")
         
-        missing_count <- sum(is.na(data_column))
-        
-        atable <- data.frame(Summary = c("Min", "Q1", "Mean", "Median", "Q3", "Max", "IQR", "Range","Number of NA Observations"),
-                             Values = c(data_summary["Min."], data_summary["1st Qu."], mean(data_column), data_summary["Median"],
-                                        data_summary["3rd Qu."], data_summary["Max."],
-                                        data_iqr,
-                                        data_range,
-                                        missing_count))
-        
-        return(atable)
+        if (input$var %in% names(data)) {
+          print("Variable found in dataset...")
+          
+          data_column <- data[[input$var]]
+          data_summary <- summary(data_column, na.rm = TRUE)
+          data_iqr <- IQR(data_column, na.rm = TRUE)
+          data_range <- diff(range(data_column, na.rm = TRUE))
+          
+          missing_count <- sum(is.na(data_column))
+          
+          atable <- data.frame(Summary = c("Min", "Q1", "Mean", "Median", "Q3", "Max", "IQR", "Range","Number of NA Observations"),
+                               Values = c(data_summary["Min."], data_summary["1st Qu."], mean(data_column), data_summary["Median"],
+                                          data_summary["3rd Qu."], data_summary["Max."],
+                                          data_iqr,
+                                          data_range,
+                                          missing_count))
+          
+          print("Table created successfully...")
+          
+          return(atable)
+        } else {
+          print("Variable not found in dataset...")
+          # Dataset or variable not found
+          return(NULL)
+        }
       } else {
-        # Non-numeric variable selected
+        print("Data is null...")
+        # Dataset is null
         return(NULL)
       }
     } else {
+      print("No preloaded dataset selected...")
+      # No preloaded dataset selected
       return(NULL)
     }
   })
+  
   
   observeEvent(input$file, {
     req(input$file)
@@ -232,6 +291,8 @@ server <- function(input, output, session) {
       }
     })
   })
+  
+  
   
   
   set.seed(422024)
