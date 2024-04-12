@@ -13,7 +13,6 @@ library(mosaic)
 library(fGarch)
 library(shiny)
 
-# UI code
 
 
 # UI code
@@ -83,10 +82,11 @@ ui <- fluidPage(
                                      choices = c("Preloaded Dataset", "Upload CSV File"),
                                      selected = "Preloaded Dataset"),
                         uiOutput("dataset_select"),
+                        uiOutput("preloaded_variable_select"), # Separate variable selection for preloaded dataset
+                        uiOutput("uploaded_variable_select"),   # Separate variable selection for uploaded file
                         conditionalPanel(
                           condition = "input.data_choice == 'Upload CSV File'",
-                          fileInput("file", "", accept = ".csv"),
-                          selectInput("var", "", "")
+                          fileInput("file", "", accept = ".csv")
                         )
                       )),
                column(9, 
@@ -98,8 +98,6 @@ ui <- fluidPage(
     )
   )
 )
-
-
 
 # server function
 server <- function(input, output, session) {
@@ -126,7 +124,7 @@ server <- function(input, output, session) {
   # Update select input choices when a dataset is selected
   observeEvent(input$dataset, {
     req(input$dataset)
-    updateSelectInput(session, "var", choices = names(data_selected()))
+    updateSelectInput(session, "preloaded_var", choices = names(data_selected()))
   }, ignoreInit = TRUE)
   
   # Reactive function for uploaded data
@@ -134,36 +132,36 @@ server <- function(input, output, session) {
     req(data_selected())
     df <- data_selected()
     if (!is.null(df)) {
-      updateSelectInput(session, "var", choices = names(df))
+      updateSelectInput(session, "uploaded_var", choices = names(df))
     }
     return(df)
   })
   
   output$uploaded_plot <- renderPlot({
-    req(uploaded_data(), input$var)
+    req(uploaded_data(), input$uploaded_var)
     
     data <- uploaded_data()
     
-    if (is.numeric(data[[input$var]])) {
+    if (is.numeric(data[[input$uploaded_var]])) {
       # Quantitative variable selected
       data <- uploaded_data()
       
       # Filter out missing and non-finite values
-      data <- data[complete.cases(data[[input$var]]) & is.finite(data[[input$var]]), ]
+      data <- data[complete.cases(data[[input$uploaded_var]]) & is.finite(data[[input$uploaded_var]]), ]
       
-      p <-  ggplot(data = data, aes_string(x = input$var)) +
+      p <-  ggplot(data = data, aes_string(x = input$uploaded_var)) +
         geom_histogram(mapping = aes(fill = "Histogram"), color = "black", bins = 30) +
         labs(x = "Value", y = "Frequency", title = "Histogram") +
-        geom_vline(mapping = aes(xintercept = mean(.data[[input$var]]), color = "Mean"), size = 2) +
-        geom_vline(mapping = aes(xintercept = median(.data[[input$var]]), color = "Median"), size = 2) +
+        geom_vline(mapping = aes(xintercept = mean(.data[[input$uploaded_var]]), color = "Mean"), size = 2) +
+        geom_vline(mapping = aes(xintercept = median(.data[[input$uploaded_var]]), color = "Median"), size = 2) +
         scale_color_manual("", values = c(Mean = "#D55E00", Median = "#882255")) +
         scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
         theme(legend.position = "none")
       
-      bp <-  ggplot(data = data, aes_string(x = input$var)) +
+      bp <-  ggplot(data = data, aes_string(x = input$uploaded_var)) +
         geom_boxplot(color = "black", fill = "#56B4E9") +
-        geom_vline(mapping = aes(xintercept = mean(.data[[input$var]]), color = "Mean"), size = 2) +
-        geom_vline(mapping = aes(xintercept = median(.data[[input$var]]), color = "Median"), size = 2) +
+        geom_vline(mapping = aes(xintercept = mean(.data[[input$uploaded_var]]), color = "Mean"), size = 2) +
+        geom_vline(mapping = aes(xintercept = median(.data[[input$uploaded_var]]), color = "Median"), size = 2) +
         scale_color_manual("", values = c(Mean = "#D55E00", Median = "#882255")) +
         scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
         labs(x = "Value", y = " ", title = "Boxplot") +
@@ -176,9 +174,9 @@ server <- function(input, output, session) {
       # Return the combined plots
       gridExtra::grid.arrange(p, bp, nrow = 1)
       
-    } else if (!is.numeric(data[[input$var]]) || (is.numeric(data[[input$var]]) && length(unique(data[[input$var]])) < 10)) {
+    } else if (!is.numeric(data[[input$uploaded_var]]) || (is.numeric(data[[input$uploaded_var]]) && length(unique(data[[input$uploaded_var]])) < 10)) {
       # Qualitative variable selected
-      ggplot(data = data, aes_string(x = input$var)) +
+      ggplot(data = data, aes_string(x = input$uploaded_var)) +
         geom_bar(fill = "#56B4E9", color = "black") +
         labs(x = "Value", y = "Frequency", title = "Bar Plot") +
         theme(legend.position = "none")
@@ -189,6 +187,9 @@ server <- function(input, output, session) {
         labs(title = "Invalid Variable Type Selected")
     }
   })
+}
+
+  
   
   output$uploaded_table <- renderTable({
     req(uploaded_data(), input$var)
@@ -238,16 +239,14 @@ server <- function(input, output, session) {
     }
   })
   
-  # Conditional rendering for hiding/showing upload button
-  output$upload_button_visibility <- renderUI({
+  # Conditional panel for showing/hiding the variable selection dropdown
+  output$variable_select <- renderUI({
     if (input$data_choice == "Upload CSV File" && !is.null(input$dataset_select)) {
-      return(NULL) # Hide the upload button
+      return(selectInput("var", "Choose a Variable", choices = NULL)) # Display the variable selection dropdown
     } else {
-      return(tags$style("#file { display: none; }")) # Hide the file input
+      return(NULL) # Hide the variable selection dropdown
     }
   })
-  
-  
   
   
   
@@ -367,10 +366,10 @@ server <- function(input, output, session) {
       theme(legend.position = "right")
   })
   
-}
+
+  
 # Run the application 
 shinyApp(ui = ui, server = server)
-
 
 
 
