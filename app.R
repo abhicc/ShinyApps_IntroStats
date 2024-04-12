@@ -3,6 +3,8 @@
 # histograms and boxplots. It also demonstrates how the mean and standard deviation
 # affects these plots, and how numerical summaries are affected by extreme outliers.
 ################################################################################
+
+
 # Required libraries
 library(sn)
 library(tidyverse)
@@ -11,16 +13,10 @@ library(mosaic)
 library(fGarch)
 library(shiny)
 
-HomesForSale <- read.csv("HomesForSale.csv")
-HappyPlanetIndex <- read.csv("HappyPlanetIndex.csv")
-USStates <- read.csv("USStates1e.csv")
-StudentSurvey <- read.csv("StudentSurvey.csv")
-FloridaLakes <- read.csv("FloridaLakes.csv")
-RestaurantTips <- read.csv("RestaurantTips.csv")
-SleepStudy <- read.csv("SleepStudy.csv")
+# UI code
 
-# user interface
 
+# UI code
 ui <- fluidPage(
   # Application title
   titlePanel("Summarizing Numerical Data: Visualizing Mean and Median"),
@@ -77,40 +73,33 @@ ui <- fluidPage(
              )
     ),
     
-    # Upload File tab
+    # Upload File tab with side panel
     tabPanel("Upload File",
              fluidRow(
-               column(6, h4("Choose Dataset or Upload a CSV file")),
-               fluidRow(
-                 column(6, 
+               column(3, 
+                      sidebarPanel(
+                        h4("Choose Dataset or Upload a CSV file"),
                         radioButtons("data_choice", "Select Data Source:", 
                                      choices = c("Preloaded Dataset", "Upload CSV File"),
-                                     selected = "Preloaded Dataset")),
-                 column(6, 
-                        selectInput("dataset", "Choose a Dataset", choices = c("mtcars", "iris", 
-                                                                               "HomesForSale", "HappyPlanetIndex", 
-                                                                               "USStates", "StudentSurvey", 
-                                                                               "FloridaLakes", "RestaurantTips", 
-                                                                               "SleepStudy"), selected = "mtcars"))
-               ),
-               fluidRow(
-                 column(6, 
-                        fileInput("file", "", accept = ".csv")),
-                 column(6, 
-                        selectInput("var", "", ""))
-               ),
-               fluidRow(
-                 column(6, 
-                        plotOutput("uploaded_plot", width = "100%", height = "400px")),
-                 column(6, 
-                        tableOutput("uploaded_table"))
-               )
-             ),
-             # Conditional rendering to hide/show the upload file button
-             uiOutput("upload_button_visibility")
+                                     selected = "Preloaded Dataset"),
+                        uiOutput("dataset_select"),
+                        conditionalPanel(
+                          condition = "input.data_choice == 'Upload CSV File'",
+                          fileInput("file", "", accept = ".csv"),
+                          selectInput("var", "", "")
+                        )
+                      )),
+               column(9, 
+                      mainPanel(
+                        plotOutput("uploaded_plot", width = "100%", height = "400px"),
+                        tableOutput("uploaded_table")
+                      ))
+             )
     )
   )
 )
+
+
 
 # server function
 server <- function(input, output, session) {
@@ -121,9 +110,7 @@ server <- function(input, output, session) {
       return(get(input$dataset))
     } else {
       req(input$file)
-      df <- read.csv(input$file$datapath)
-      updateSelectInput(session, "var", choices = names(df))  # Update select input choices with variable names
-      return(df)
+      return(read.csv(input$file$datapath))
     }
   })
   
@@ -152,7 +139,57 @@ server <- function(input, output, session) {
     return(df)
   })
   
-  # Render the uploaded table
+  output$uploaded_plot <- renderPlot({
+    req(uploaded_data(), input$var)
+    
+    data <- uploaded_data()
+    
+    if (is.numeric(data[[input$var]])) {
+      # Quantitative variable selected
+      data <- uploaded_data()
+      
+      # Filter out missing and non-finite values
+      data <- data[complete.cases(data[[input$var]]) & is.finite(data[[input$var]]), ]
+      
+      p <-  ggplot(data = data, aes_string(x = input$var)) +
+        geom_histogram(mapping = aes(fill = "Histogram"), color = "black", bins = 30) +
+        labs(x = "Value", y = "Frequency", title = "Histogram") +
+        geom_vline(mapping = aes(xintercept = mean(.data[[input$var]]), color = "Mean"), size = 2) +
+        geom_vline(mapping = aes(xintercept = median(.data[[input$var]]), color = "Median"), size = 2) +
+        scale_color_manual("", values = c(Mean = "#D55E00", Median = "#882255")) +
+        scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
+        theme(legend.position = "none")
+      
+      bp <-  ggplot(data = data, aes_string(x = input$var)) +
+        geom_boxplot(color = "black", fill = "#56B4E9") +
+        geom_vline(mapping = aes(xintercept = mean(.data[[input$var]]), color = "Mean"), size = 2) +
+        geom_vline(mapping = aes(xintercept = median(.data[[input$var]]), color = "Median"), size = 2) +
+        scale_color_manual("", values = c(Mean = "#D55E00", Median = "#882255")) +
+        scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
+        labs(x = "Value", y = " ", title = "Boxplot") +
+        theme(legend.position = "right")
+      
+      # Set the height of each plot
+      p <- p + theme(plot.margin = margin(0, 0, 0, 0, "cm"))
+      bp <- bp + theme(plot.margin = margin(0, 0, 0, 0, "cm"))
+      
+      # Return the combined plots
+      gridExtra::grid.arrange(p, bp, nrow = 1)
+      
+    } else if (!is.numeric(data[[input$var]]) || (is.numeric(data[[input$var]]) && length(unique(data[[input$var]])) < 10)) {
+      # Qualitative variable selected
+      ggplot(data = data, aes_string(x = input$var)) +
+        geom_bar(fill = "#56B4E9", color = "black") +
+        labs(x = "Value", y = "Frequency", title = "Bar Plot") +
+        theme(legend.position = "none")
+    } else {
+      # Non-numeric variable selected
+      ggplot() +
+        geom_point() +  # Placeholder plot to prevent the error
+        labs(title = "Invalid Variable Type Selected")
+    }
+  })
+  
   output$uploaded_table <- renderTable({
     req(uploaded_data(), input$var)
     data <- uploaded_data()
@@ -166,16 +203,12 @@ server <- function(input, output, session) {
         
         missing_count <- sum(is.na(data_column))
         
-        atable <- data.frame(
-          Summary = c("Min", "Q1", "Mean", "Median", "Q3", "Max", "IQR", "Range","Number of NA Observations"),
-          Values = c(
-            data_summary["Min."], data_summary["1st Qu."], data_summary["Mean"], data_summary["Median"],
-            data_summary["3rd Qu."], data_summary["Max."],
-            data_iqr,
-            data_range,
-            missing_count
-          )
-        )
+        atable <- data.frame(Summary = c("Min", "Q1", "Mean", "Median", "Q3", "Max", "IQR", "Range","Number of NA Observations"),
+                             Values = c(data_summary["Min."], data_summary["1st Qu."], data_summary["Mean"], data_summary["Median"],
+                                        data_summary["3rd Qu."], data_summary["Max."],
+                                        data_iqr,
+                                        data_range,
+                                        missing_count))
         
         return(atable)
       } else if (!is.numeric(data[[input$var]])) {
@@ -191,75 +224,32 @@ server <- function(input, output, session) {
     }
   })
   
-  # Render the histogram and density plot
-  output$uploaded_plot <- renderPlot({
-    req(uploaded_data(), input$var)
-    
-    data <- uploaded_data()
-    
-    if (!is.null(data[[input$var]])) {  
-      # Check if data and selected variable exist
-      
-      if (is.numeric(data[[input$var]])) {
-        # Only render the plot when the data is numeric
-        
-        data <- na.omit(data)
-        
-        p <- ggplot(data, aes_string(x = input$var)) +
-          geom_histogram(mapping = aes(y = ..density.., fill = "Histogram"), color = "black", bins = 30) +
-          geom_density(color = "black", alpha = 0.5, size = 1.5) + # Add density plot
-          labs(x = "Value", y = "Density", title = "Histogram with Density Plot") +
-          geom_vline(mapping = aes(xintercept = mean(.data[[input$var]]), color = "Mean"), size = 2) + # Use .data
-          geom_vline(mapping = aes(xintercept = median(.data[[input$var]]), color = "Median"), size = 2) + # Use .data
-          scale_color_manual("", values = c(Mean = "#D55E00", Median = "#882255")) +
-          scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
-          theme_void() + # Set the theme to void
-          theme(plot.background = element_rect(fill = "white", color = NA)) # Remove the border around the white space
-        
-        print(p)
-        
-      } else {
-        # Render a message if the selected variable is not numeric
-        plot(1, type = "n", xlab = "", ylab = "", main = "Selected variable is not numeric")
-      }
-    } else {
-      # Render a message if data or selected variable is missing
-      plot(1, type = "n", xlab = "", ylab = "", main = "Data or selected variable missing")
-    }
+  observeEvent(input$file, {
+    req(uploaded_data())
+    updateSelectInput(session, "var", choices = names(uploaded_data()))
   })
   
-  
-  # Render the table
-  output$uploaded_table <- renderTable({
-    req(uploaded_data(), input$var)
-    
-    data <- uploaded_data()
-    
-    if (is.numeric(data[[input$var]])) {
-      # Quantitative variable selected
-      data_column <- data[[input$var]]
-      data_summary <- summary(data_column, na.rm = TRUE)
-      data_iqr <- IQR(data_column, na.rm = TRUE)
-      data_range <- diff(range(data_column, na.rm = TRUE))
-      
-      missing_count <- sum(is.na(data_column))
-      
-      atable <- data.frame(
-        Summary = c("Min", "Q1", "Mean", "Median", "Q3", "Max", "IQR", "Range","Number of NA Observations"),
-        Values = c(
-          data_summary["Min."], data_summary["1st Qu."], data_summary["Mean"], data_summary["Median"],
-          data_summary["3rd Qu."], data_summary["Max."],
-          data_iqr,
-          data_range,
-          missing_count
-        )
-      )
-      
-      return(atable)
+  # Conditional panel for showing/hiding the "Choose a Dataset" select input
+  output$dataset_select <- renderUI({
+    if (input$data_choice == "Preloaded Dataset") {
+      return(selectInput("dataset", "Choose a Dataset", choices = c("mtcars", "iris"), selected = "mtcars"))
     } else {
       return(NULL)
     }
   })
+  
+  # Conditional rendering for hiding/showing upload button
+  output$upload_button_visibility <- renderUI({
+    if (input$data_choice == "Upload CSV File" && !is.null(input$dataset_select)) {
+      return(NULL) # Hide the upload button
+    } else {
+      return(tags$style("#file { display: none; }")) # Hide the file input
+    }
+  })
+  
+  
+  
+  
   
   set.seed(422024)
   # Create dataframe for fixed tab
@@ -325,25 +315,8 @@ server <- function(input, output, session) {
       geom_vline(mapping = aes(xintercept = median(df()$value), color = "Median"), size = 2) +
       scale_color_manual("", values = c(Mean = "#D55E00", Median = "#882255")) +
       scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
-      xlim(c(-100, 100)) +
-      theme(legend.position = "right")
+      theme(legend.position = "none")
   })
-  
-  
-  output$hist_dynamic <- renderPlot({
-    ggplot(data = df_dynamic(), aes(x = value)) +
-      geom_histogram(mapping = aes(y = ..density.., fill = "Histogram"), color = "black", bins = 45) +
-      geom_density(color = "black", alpha = 0.5, size = 1.5) + # Add density plot
-      labs(x = "Value", y = "Density", title = "Histogram with Density Plot") +
-      geom_vline(mapping = aes(xintercept = mean(df_dynamic()$value), color = "Mean"), size = 2) +
-      geom_vline(mapping = aes(xintercept = median(df_dynamic()$value), color = "Median"), size = 2) +
-      scale_color_manual("", values = c(Mean = "#D55E00", Median = "#882255")) +
-      scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
-      xlim(c(-100, 100)) +
-      theme(legend.position = "right")
-  })
-  
-  
   
   output$boxplot <- renderPlot({
     ggplot(data = df()) +
@@ -356,6 +329,29 @@ server <- function(input, output, session) {
       scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
       xlim(c(-100, 100)) +
       theme(legend.position = "right")
+  })
+  
+  output$table <- renderTable({
+    data <- summary(df()$value)
+    data_iqr <- IQR(df()$value)
+    data_range <- diff(range(df()$value))
+    
+    atable <- data.frame(Summary = c("Min", "Q1", "Mean", "Median", "Q3", "Max", "IQR", "Range"),
+                         Values = c(data["Min."], data["1st Qu."], mean(df()$value), data["Median"], data["3rd Qu."], data["Max."], data_iqr, data_range))
+    
+    return(atable)
+  })
+  
+  output$hist_dynamic <- renderPlot({
+    ggplot(data = df_dynamic(), aes(x = value)) +
+      geom_histogram(mapping = aes(y = ..density.., fill = "Histogram"), color = "black", bins = 45) +
+      geom_density(color = "black", alpha = 0.5, size = 1.5) +
+      labs(x = "Value", y = "Density", title = "Histogram with Density Plot") +
+      geom_vline(mapping = aes(xintercept = mean(df_dynamic()$value), color = "Mean"), size = 2) +
+      geom_vline(mapping = aes(xintercept = median(df_dynamic()$value), color = "Median"), size = 2) +
+      scale_color_manual("", values = c(Mean = "#D55E00", Median = "#882255")) +
+      scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
+      theme(legend.position = "none")
   })
   
   output$boxplot_dynamic <- renderPlot({
@@ -371,32 +367,9 @@ server <- function(input, output, session) {
       theme(legend.position = "right")
   })
   
-  # Summary Table for Fixed Mean and SD tab
-  output$table <- renderTable({
-    res <- favstats(~ value, data=df())
-    ftable <- data.frame(Summary = c("Min", "Q1", "Mean", "Median", "Q3", "Max", "IQR", "Range"),
-                         Values = c(round(res$min,3), round(res$Q1,3), round(res$mean,3), round(res$median,3), 
-                                    round(res$Q3,3), round(res$max,3), 
-                                    round(res$Q3,3) - round(res$Q1,3),
-                                    round(res$max,3) - round(res$min,3)))
-    
-    ftable
-  })
 }
-
-# Run the application
+# Run the application 
 shinyApp(ui = ui, server = server)
-
-
-
-
-
-
-
-
-
-
-
 
 
 
