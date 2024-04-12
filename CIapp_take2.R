@@ -19,8 +19,8 @@ ui <- fluidPage(
       numericInput("sd", "Population standard deviation (σ):", value = 10),
       numericInput("n", "Sample size (n):", value = 50),
       numericInput("n_intervals", "Number of intervals:", value = 10),
-      sliderInput("confidence", "Confidence Level:",
-                  min = 0.01, max = 0.99, value = 0.95, step = 0.01),
+      selectInput("confidence", "Confidence Level:",
+                  choices = c("95%" = 0.95, "90%" = 0.90, "99%" = 0.99)),
       textOutput("intervals_containing_mu") # display number of intervals containing μ and percentage
     ),
     mainPanel(
@@ -42,10 +42,11 @@ server <- function(input, output) {
     
     # Calculate confidence intervals for each sample
     ci_data <- lapply(sample_data, function(data) {
-      ci <- qnorm((1 - input$confidence) / 2, mean = 0, sd = 1)
+      ci <- qnorm((1 - as.numeric(input$confidence)) / 2, mean = 0, sd = 1)
       lower_bound <- mean(data$x) - ci * (input$sd / sqrt(input$n))
       upper_bound <- mean(data$x) + ci * (input$sd / sqrt(input$n))
-      data.frame(y = data$y, x = mean(data$x), xmin = lower_bound, xmax = upper_bound)
+      contains_mean <- input$mean >= min(lower_bound, upper_bound) && input$mean <= max(lower_bound, upper_bound)
+      data.frame(y = data$y, x = mean(data$x), xmin = lower_bound, xmax = upper_bound, contains_mean = contains_mean, bounds_label = paste("Lower bound:", round(lower_bound, 2), "<br>Upper bound:", round(upper_bound, 2)))
     })
     
     # Calculate number of intervals containing μ
@@ -75,20 +76,24 @@ server <- function(input, output) {
     
     # Calculate confidence intervals for each sample
     ci_data <- lapply(sample_data, function(data) {
-      ci <- qnorm((1 - input$confidence) / 2, mean = 0, sd = 1)
+      ci <- qnorm((1 - as.numeric(input$confidence)) / 2, mean = 0, sd = 1)
       lower_bound <- mean(data$x) - ci * (input$sd / sqrt(input$n))
       upper_bound <- mean(data$x) + ci * (input$sd / sqrt(input$n))
-      data.frame(y = data$y, x = mean(data$x), xmin = lower_bound, xmax = upper_bound)
+      contains_mean <- input$mean >= min(lower_bound, upper_bound) && input$mean <= max(lower_bound, upper_bound)
+      data.frame(y = data$y, x = mean(data$x), xmin = lower_bound, xmax = upper_bound, contains_mean = contains_mean)
     })
     
     # Create plot
     gg <- ggplot() +
       geom_vline(xintercept = input$mean, linetype = "dashed", color = "#D55E00") +
       geom_errorbarh(data = do.call(rbind, ci_data), 
-                     mapping = aes(y = y, xmin = xmin, xmax = xmax), 
-                     color = "#009E73", height = 0.2) +
+                     aes(y = y, xmin = xmin, xmax = xmax, color = contains_mean), 
+                     height = 0.2) +
       geom_point(data = do.call(rbind, ci_data), 
-                 mapping = aes(y = y, x = x), color = "#009E73") +
+                 aes(y = y, x = x, color = contains_mean)) +
+      scale_color_manual(values = c("#882255", "#009E73"), 
+                         labels = c("Contains μ", "Does not contain μ"),
+                         name = "Contains μ") + # Adjust legend title
       labs(title = "Confidence Intervals",
            x = "Mean",
            y = "Interval") +
