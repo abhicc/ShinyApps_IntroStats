@@ -152,7 +152,7 @@ server <- function(input, output, session) {
                         "HomesForSale" = HomesForSale,
                         "FloridaLakes" = FloridaLakes)
       data_column <- dataset[[input$var]]
-      if (is.numeric(data_column)) {
+      if (is.numeric(data_column)&& !is.factor(data_column)) {
         data_summary <- summary(data_column, na.rm = TRUE)
         data_iqr <- IQR(data_column, na.rm = TRUE)
         data_range <- diff(range(data_column, na.rm = TRUE))
@@ -171,7 +171,7 @@ server <- function(input, output, session) {
       req(input$var, input$file$datapath)
       df <- read.csv(input$file$datapath)
       data_column <- df[[input$var]]
-      if (is.numeric(data_column)) {
+      if (is.numeric(data_column) && !is.factor(data_column)) {
         data_summary <- summary(data_column, na.rm = TRUE)
         data_iqr <- IQR(data_column, na.rm = TRUE)
         data_range <- diff(range(data_column, na.rm = TRUE))
@@ -208,21 +208,20 @@ server <- function(input, output, session) {
     data_column <- dataset[[input$var]]
     if (!is.null(data_column)) { # Check if data_column is not NULL
       data <- dataset[complete.cases(data_column) & !is.na(data_column), ]
-      if (is.numeric(data_column) && !is.factor(data_column)) {
-        # Existing histogram and boxplot code...
+    if (!is.factor(data_column) && is.numeric(data_column) && length(unique(data_column)) > 10) {        # Existing histogram and boxplot code...
         p <- ggplot(data = data, aes_string(x = input$var)) +
           geom_histogram(mapping = aes(y = ..density.., fill = "Histogram"), color = "black", bins = 30) +
           geom_density(color = "black", alpha = 0.5, size = 1.5) +
           labs(x = "Value", y = "Density", title = "Histogram with Density Plot") +
-          geom_vline(mapping = aes(xintercept = mean(data_column), color = "Mean"), size = 2) +
-          geom_vline(mapping = aes(xintercept = median(data_column), color = "Median"), size = 2) +
+          geom_vline(mapping = aes(xintercept = mean(.data[[input$var]]), color = "Mean"), size = 2) +
+          geom_vline(mapping = aes(xintercept = median(.data[[input$var]]), color = "Median"), size = 2) +
           scale_color_manual("", values = c(Mean = "#D55E00", Median = "#882255")) +
           scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
           theme(legend.position = "none")
         bp <-  ggplot(data = data, aes_string(x = input$var)) +
           geom_boxplot(color = "black", fill = "#56B4E9") +
-          geom_vline(mapping = aes(xintercept = mean(data_column), color = "Mean"), size = 2) +
-          geom_vline(mapping = aes(xintercept = median(data_column), color = "Median"), size = 2) +
+          geom_vline(mapping = aes(xintercept = mean(.data[[input$var]]), color = "Mean"), size = 2) +
+          geom_vline(mapping = aes(xintercept = median(.data[[input$var]]), color = "Median"), size = 2) +
           scale_color_manual("", values = c(Mean = "#D55E00", Median = "#882255")) +
           scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
           labs(x = "Value", y = " ", title = "Boxplot") +
@@ -250,21 +249,21 @@ server <- function(input, output, session) {
     if (!is.null(data_column)) { # Check if data_column is not NULL
       # Check for complete cases and remove NA values
       data <- df[complete.cases(data_column), ]
-      if (is.numeric(data_column)) {
+      if (!is.factor(data_column) && is.numeric(data_column) && length(unique(data_column)) > 10) {        # Existing histogram and boxplot code...
         # Existing histogram and boxplot code...
         p <- ggplot(data = data, aes_string(x = input$var)) +
           geom_histogram(mapping = aes(y = ..density.., fill = "Histogram"), color = "black", bins = 30) +
           geom_density(color = "black", alpha = 0.5, size = 1.5) +
           labs(x = "Value", y = "Density", title = "Histogram with Density Plot") +
-          geom_vline(mapping = aes(xintercept = mean(data_column, na.rm = TRUE), color = "Mean"), size = 2) +
-          geom_vline(mapping = aes(xintercept = median(data_column, na.rm = TRUE), color = "Median"), size = 2) +
+          geom_vline(mapping = aes(xintercept = mean(.data[[input$var]], na.rm = TRUE), color = "Mean"), size = 2) +
+          geom_vline(mapping = aes(xintercept = median(.data[[input$var]], na.rm = TRUE), color = "Median"), size = 2) +
           scale_color_manual("", values = c(Mean = "#D55E00", Median = "#882255")) +
           scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
           theme(legend.position = "none")
         bp <-  ggplot(data = data, aes_string(x = input$var)) +
           geom_boxplot(color = "black", fill = "#56B4E9") +
-          geom_vline(mapping = aes(xintercept = mean(data_column, na.rm = TRUE), color = "Mean"), size = 2) +
-          geom_vline(mapping = aes(xintercept = median(data_column, na.rm = TRUE), color = "Median"), size = 2) +
+          geom_vline(mapping = aes(xintercept = mean(.data[[input$var]], na.rm = TRUE), color = "Mean"), size = 2) +
+          geom_vline(mapping = aes(xintercept = median(.data[[input$var]], na.rm = TRUE), color = "Median"), size = 2) +
           scale_color_manual("", values = c(Mean = "#D55E00", Median = "#882255")) +
           scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
           labs(x = "Value", y = " ", title = "Boxplot") +
@@ -285,9 +284,6 @@ server <- function(input, output, session) {
     }
   })
   
-
-
-
   
   
   set.seed(422024)
@@ -399,5 +395,6 @@ server <- function(input, output, session) {
   })
   
 }
+
 
 shinyApp(ui = ui, server = server)
