@@ -66,28 +66,56 @@ server <- function(input, output) {
     # Calculate confidence intervals for each sample
     ci_data <- lapply(sample_data, function(data) {
       ci <- qnorm((1 - confidence) / 2, mean = 0, sd = 1)
-      lower_bound <- mean(data$x) - ci * (1 / sqrt(sample_size)) # Standard deviation of the normal distribution is 1
-      upper_bound <- mean(data$x) + ci * (1 / sqrt(sample_size))
-      contains_param <- param_value >= min(lower_bound, upper_bound) && param_value <= max(lower_bound, upper_bound)
+      se <- sd(data$x) / sqrt(sample_size) # Correct calculation of standard error
+      lower_bound <- mean(data$x) - ci * se
+      upper_bound <- mean(data$x) + ci * se
+      contains_param <- param_value >= lower_bound & param_value <= upper_bound
+      print(paste("Parameter Value:", param_value))
+      print(paste("Lower Bound:", lower_bound))
+      print(paste("Upper Bound:", upper_bound))
+      print(paste("Contains Param:", contains_param))
       data.frame(y = data$y, x = mean(data$x), xmin = lower_bound, xmax = upper_bound, contains_param = contains_param)
     })
     
-    sum(sapply(ci_data, function(ci) {
-      if (param_value >= min(ci$xmin, ci$xmax) && param_value <= max(ci$xmin, ci$xmax)) {
+    intervals_with_param <- sum(sapply(ci_data, function(ci) {
+      if (any(ci$contains_param)) {
         1
       } else {
         0
       }
     }))
+    
+    print(paste("Intervals with parameter:", intervals_with_param))
+    
+    intervals_with_param
   }
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  # Display number of intervals containing the parameter and percentage for mean
   # Display number of intervals containing the parameter and percentage for mean
   output$intervals_containing_param <- renderText({
     total_intervals <- input$num_intervals
     intervals_with_param <- intervals_containing_param(input$param_value, input$sample_size, input$num_intervals, input$confidence)
-    percentage <- round(intervals_with_param / total_intervals * 100, 2)
-    paste("Number of intervals containing the parameter:", intervals_with_param, "/", total_intervals, "=", percentage, "%")
+    
+    if (intervals_with_param > 0) {
+      percentage <- round(intervals_with_param / total_intervals * 100, 2)
+      result <- paste("Number of intervals containing the parameter:", intervals_with_param, "/", total_intervals, "=", percentage, "%")
+    } else {
+      result <- "None of the intervals contain the parameter."
+    }
+    
+    return(result)
   })
+  
+  
   
   # Display number of intervals containing the parameter and percentage for proportion
   output$intervals_containing_param_prop <- renderText({
