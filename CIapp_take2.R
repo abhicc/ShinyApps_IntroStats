@@ -8,6 +8,16 @@ library(tidyverse)
 library(plotly)
 library(shiny)
 
+
+
+################################################################################
+library(tidyverse)
+library(plotly)
+library(shiny)
+
+
+
+
 # Define UI
 ui <- fluidPage(
   titlePanel("Simulating Confidence Intervals"), # Application title 
@@ -43,7 +53,6 @@ ui <- fluidPage(
   )
 )
 
-
 # Define server logic
 server <- function(input, output) {
   
@@ -59,10 +68,10 @@ server <- function(input, output) {
       ci <- qnorm((1 - confidence) / 2, mean = 0, sd = 1)
       lower_bound <- mean(data$x) - ci * (1 / sqrt(sample_size)) # Standard deviation of the normal distribution is 1
       upper_bound <- mean(data$x) + ci * (1 / sqrt(sample_size))
-      data.frame(y = data$y, x = mean(data$x), xmin = lower_bound, xmax = upper_bound)
+      contains_param <- param_value >= min(lower_bound, upper_bound) && param_value <= max(lower_bound, upper_bound)
+      data.frame(y = data$y, x = mean(data$x), xmin = lower_bound, xmax = upper_bound, contains_param = contains_param)
     })
     
-    # Calculate number of intervals containing the parameter
     sum(sapply(ci_data, function(ci) {
       if (param_value >= min(ci$xmin, ci$xmax) && param_value <= max(ci$xmin, ci$xmax)) {
         1
@@ -72,10 +81,18 @@ server <- function(input, output) {
     }))
   }
   
-  # Calculate number of intervals containing the parameter for mean simulation
+  # Display number of intervals containing the parameter and percentage for mean
   output$intervals_containing_param <- renderText({
     total_intervals <- input$num_intervals
     intervals_with_param <- intervals_containing_param(input$param_value, input$sample_size, input$num_intervals, input$confidence)
+    percentage <- round(intervals_with_param / total_intervals * 100, 2)
+    paste("Number of intervals containing the parameter:", intervals_with_param, "/", total_intervals, "=", percentage, "%")
+  })
+  
+  # Display number of intervals containing the parameter and percentage for proportion
+  output$intervals_containing_param_prop <- renderText({
+    total_intervals <- input$num_intervals_prop
+    intervals_with_param <- intervals_containing_param(input$param_value_prop, input$sample_size_prop, input$num_intervals_prop, input$confidence_prop)
     percentage <- round(intervals_with_param / total_intervals * 100, 2)
     paste("Number of intervals containing the parameter:", intervals_with_param, "/", total_intervals, "=", percentage, "%")
   })
@@ -92,17 +109,19 @@ server <- function(input, output) {
       ci <- qnorm((1 - input$confidence) / 2, mean = 0, sd = 1)
       lower_bound <- mean(data$x) - ci * (1 / sqrt(input$sample_size)) # Standard deviation of the normal distribution is 1
       upper_bound <- mean(data$x) + ci * (1 / sqrt(input$sample_size))
-      data.frame(y = data$y, x = mean(data$x), xmin = lower_bound, xmax = upper_bound)
+      contains_param <- ifelse(input$param_value >= min(lower_bound, upper_bound) && input$param_value <= max(lower_bound, upper_bound), "TRUE", "FALSE")
+      data.frame(y = data$y, x = mean(data$x), xmin = lower_bound, xmax = upper_bound, contains_param = contains_param)
     })
     
     # Create plot for mean simulation
     gg <- ggplot() +
       geom_vline(xintercept = input$param_value, linetype = "dashed", color = "#D55E00") +
       geom_errorbarh(data = do.call(rbind, ci_data), 
-                     mapping = aes(y = y, xmin = xmin, xmax = xmax), 
-                     color = "#009E73", height = 0.2) +
+                     mapping = aes(y = y, xmin = xmin, xmax = xmax, color = contains_param), 
+                     height = 0.2) +
       geom_point(data = do.call(rbind, ci_data), 
-                 mapping = aes(y = y, x = x), color = "#009E73") +
+                 mapping = aes(y = y, x = x, color = contains_param)) +
+      scale_color_manual(values = c("TRUE" = "#009E73", "FALSE" = "#D55E00"), guide = FALSE, labels = c("TRUE" = "Contains Parameter", "FALSE" = "Doesn't Contain Parameter")) +
       labs(title = "Confidence Intervals",
            x = "Mean",
            y = "Interval") +
@@ -111,14 +130,6 @@ server <- function(input, output) {
             axis.title.y = element_blank()) # Hide y-axis label
     
     ggplotly(gg) # Convert ggplot2 figure into an interactive plotly plot
-  })
-  
-  # Calculate number of intervals containing the parameter for proportion simulation
-  output$intervals_containing_param_prop <- renderText({
-    total_intervals <- input$num_intervals_prop
-    intervals_with_param <- intervals_containing_param(input$param_value_prop, input$sample_size_prop, input$num_intervals_prop, input$confidence_prop)
-    percentage <- round(intervals_with_param / total_intervals * 100, 2)
-    paste("Number of intervals containing the parameter:", intervals_with_param, "/", total_intervals, "=", percentage, "%")
   })
   
   # Render the plot for proportion simulation
@@ -135,17 +146,19 @@ server <- function(input, output) {
       se <- sqrt(p_hat * (1 - p_hat) / input$sample_size_prop) # Standard error of the proportion
       lower_bound <- p_hat - ci * se
       upper_bound <- p_hat + ci * se
-      data.frame(y = data$y, x = p_hat, xmin = lower_bound, xmax = upper_bound)
+      contains_param <- ifelse(input$param_value_prop >= min(lower_bound, upper_bound) && input$param_value_prop <= max(lower_bound, upper_bound), "TRUE", "FALSE")
+      data.frame(y = data$y, x = p_hat, xmin = lower_bound, xmax = upper_bound, contains_param = contains_param)
     })
     
     # Create plot for proportion simulation
     gg <- ggplot() +
       geom_vline(xintercept = input$param_value_prop, linetype = "dashed", color = "#D55E00") +
       geom_errorbarh(data = do.call(rbind, ci_data), 
-                     mapping = aes(y = y, xmin = xmin, xmax = xmax), 
-                     color = "#009E73", height = 0.2) +
+                     mapping = aes(y = y, xmin = xmin, xmax = xmax, color = contains_param), 
+                     height = 0.2) +
       geom_point(data = do.call(rbind, ci_data), 
-                 mapping = aes(y = y, x = x), color = "#009E73") +
+                 mapping = aes(y = y, x = x, color = contains_param)) +
+      scale_color_manual(values = c("TRUE" = "#009E73", "FALSE" = "#D55E00"), guide = FALSE, labels = c("TRUE" = "Contains Parameter", "FALSE" = "Doesn't Contain Parameter")) +
       labs(title = "Confidence Intervals",
            x = "Proportion",
            y = "Interval") +
@@ -157,5 +170,5 @@ server <- function(input, output) {
   })
 }
 
-# Run the application
+
 shinyApp(ui = ui, server = server)
