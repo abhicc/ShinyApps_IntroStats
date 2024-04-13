@@ -21,13 +21,7 @@ library(fGarch)
 library(shiny)
 library(gridExtra)
 
-# UI code
-# UI code
-
-
-
-
-# UI code
+# user interface
 
 ui <- fluidPage(
   titlePanel("Summarizing Numerical Data: Visualizing Mean and Median"),
@@ -72,7 +66,7 @@ ui <- fluidPage(
              )
     ),
     
-    tabPanel("Upload File",
+    tabPanel("Dataset Hub",
              fluidRow(
                column(12, HTML("<br>")), # Add a blank row
              ),
@@ -140,6 +134,7 @@ server <- function(input, output, session) {
     }
   })
   
+  # Preloaded table
   output$data_table <- renderTable({
     if (input$data_choice == "Preloaded Dataset") {
       req(input$var, input$data_choice, input$dataset)
@@ -194,7 +189,7 @@ server <- function(input, output, session) {
     df <- read.csv(input$file$datapath, header = TRUE)
     updateSelectInput(session, "var", choices = names(df))
   })
-  
+  # Preloaded numeric plots  
   output$dataset_plot <- renderPlot({
     req(input$var, input$data_choice)
     dataset <- switch(input$dataset,
@@ -206,22 +201,22 @@ server <- function(input, output, session) {
                       "HomesForSale" = HomesForSale,
                       "FloridaLakes" = FloridaLakes)
     data_column <- dataset[[input$var]]
-    if (!is.null(data_column)) { # Check if data_column is not NULL
+    if (!is.null(data_column)) { 
       data <- dataset[complete.cases(data_column) & !is.na(data_column), ]
-    if (!is.factor(data_column) && is.numeric(data_column) && length(unique(data_column)) > 10) {        # Existing histogram and boxplot code...
+      if (!is.factor(data_column) && is.numeric(data_column) && length(unique(data_column)) > 10) {        
         p <- ggplot(data = data, aes_string(x = input$var)) +
           geom_histogram(mapping = aes(y = ..density.., fill = "Histogram"), color = "black", bins = 30) +
           geom_density(color = "black", alpha = 0.5, size = 1.5) +
           labs(x = "Value", y = "Density", title = "Histogram with Density Plot") +
-          geom_vline(mapping = aes(xintercept = mean(.data[[input$var]]), color = "Mean"), size = 2) +
-          geom_vline(mapping = aes(xintercept = median(.data[[input$var]]), color = "Median"), size = 2) +
+          geom_vline(mapping = aes(xintercept = mean(.data[[input$var]], na.rm = TRUE), color = "Mean"), size = 2) +
+          geom_vline(mapping = aes(xintercept = median(.data[[input$var]], na.rm = TRUE), color = "Median"), size = 2) +
           scale_color_manual("", values = c(Mean = "#D55E00", Median = "#882255")) +
           scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
           theme(legend.position = "none")
         bp <-  ggplot(data = data, aes_string(x = input$var)) +
           geom_boxplot(color = "black", fill = "#56B4E9") +
-          geom_vline(mapping = aes(xintercept = mean(.data[[input$var]]), color = "Mean"), size = 2) +
-          geom_vline(mapping = aes(xintercept = median(.data[[input$var]]), color = "Median"), size = 2) +
+          geom_vline(mapping = aes(xintercept = mean(.data[[input$var]], na.rm = TRUE), color = "Mean"), size = 2) +
+          geom_vline(mapping = aes(xintercept = median(.data[[input$var]], na.rm = TRUE), color = "Median"), size = 2) +
           scale_color_manual("", values = c(Mean = "#D55E00", Median = "#882255")) +
           scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
           labs(x = "Value", y = " ", title = "Boxplot") +
@@ -232,7 +227,7 @@ server <- function(input, output, session) {
         # Return the combined plots
         return(grid.arrange(p, bp, nrow = 1))
       } else {
-        # New block for categorical variables
+        # Categorical plot 
         p <- ggplot(data = data, aes_string(x = input$var)) +
           geom_bar(fill = "#56B4E9") +
           labs(x = "Category", y = "Frequency", title = "Barplot for Categorical Variable") +
@@ -241,7 +236,7 @@ server <- function(input, output, session) {
       }
     }
   })
-  
+  # Upload numeric plots 
   output$upload_plot <- renderPlot({
     req(input$var, input$file$datapath)
     df <- read.csv(input$file$datapath)
@@ -274,7 +269,7 @@ server <- function(input, output, session) {
         # Return the combined plots
         return(grid.arrange(p, bp, nrow = 1))
       } else {
-        # New block for categorical variables
+        # Categorical plot
         p <- ggplot(data = data, aes_string(x = input$var)) +
           geom_bar(fill = "#56B4E9") +
           labs(x = "Category", y = "Frequency", title = "Barplot for Categorical Variable") +
@@ -398,3 +393,4 @@ server <- function(input, output, session) {
 
 
 shinyApp(ui = ui, server = server)
+############################################################################
