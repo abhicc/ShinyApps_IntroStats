@@ -8,16 +8,6 @@ library(tidyverse)
 library(plotly)
 library(shiny)
 
-
-
-################################################################################
-library(tidyverse)
-library(plotly)
-library(shiny)
-
-
-
-
 # Define UI
 ui <- fluidPage(
   titlePanel("Simulating Confidence Intervals"), # Application title 
@@ -90,16 +80,6 @@ server <- function(input, output) {
     intervals_with_param
   }
   
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  # Display number of intervals containing the parameter and percentage for mean
   # Display number of intervals containing the parameter and percentage for mean
   output$intervals_containing_param <- renderText({
     total_intervals <- input$num_intervals
@@ -197,6 +177,5 @@ server <- function(input, output) {
     ggplotly(gg) # Convert ggplot2 figure into an interactive plotly plot
   })
 }
-
 
 shinyApp(ui = ui, server = server)
