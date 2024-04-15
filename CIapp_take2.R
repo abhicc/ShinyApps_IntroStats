@@ -15,11 +15,11 @@ ui <- fluidPage(
     tabPanel("Mean", value = "mean",
              sidebarLayout(
                sidebarPanel(
-                 numericInput("param_value", "Parameter value:", value = .5, min = 0, max = 1, step = 0.1),
+                 numericInput("param_value", "Population mean (μ):", value = .5, min = 0, max = 1, step = 0.1),
                  numericInput("sample_size", "Sample size (n):", value = 50, min = 1),
                  numericInput("num_intervals", "Number of intervals:", value = 10, min = 1),
-                 sliderInput("confidence", "Confidence Level:",
-                             min = 0.01, max = 0.99, value = 0.95, step = 0.01),
+                 selectInput("confidence", "Confidence level:",
+                             choices = c("95%" = 0.95, "90%" = 0.90, "99%" = 0.99)),
                  textOutput("intervals_containing_param") # Display number of intervals containing the parameter and percentage
                ),
                mainPanel(
@@ -29,11 +29,11 @@ ui <- fluidPage(
     tabPanel("Proportion", value = "proportion",
              sidebarLayout(
                sidebarPanel(
-                 numericInput("param_value_prop", "Parameter value:", value = 0.5, min = 0, max = 1, step = 0.1),
+                 numericInput("param_value_prop", "Population proportion (π):", value = 0.5, min = 0, max = 1, step = 0.1),
                  numericInput("sample_size_prop", "Sample size (n):", value = 50, min = 1),
                  numericInput("num_intervals_prop", "Number of intervals:", value = 10, min = 1),
-                 sliderInput("confidence_prop", "Confidence Level:",
-                             min = 0.01, max = 0.99, value = 0.95, step = 0.01),
+                 selectInput("confidence_prop", "Confidence level:",
+                             choices = c("95%" = 0.95, "90%" = 0.90, "99%" = 0.99)),
                  textOutput("intervals_containing_param_prop") # Display number of intervals containing the parameter and percentage
                ),
                mainPanel(
@@ -55,7 +55,7 @@ server <- function(input, output) {
     
     # Calculate confidence intervals for each sample
     ci_data <- lapply(sample_data, function(data) {
-      ci <- qnorm((1 - confidence) / 2, mean = 0, sd = 1)
+      ci <- qnorm((1 - as.numeric(input$confidence)) / 2, mean = 0, sd = 1)
       se <- sd(data$x) / sqrt(sample_size) # Correct calculation of standard error
       lower_bound <- mean(data$x) - ci * se
       upper_bound <- mean(data$x) + ci * se
@@ -68,7 +68,7 @@ server <- function(input, output) {
     })
     
     intervals_with_param <- sum(sapply(ci_data, function(ci) {
-      if (any(ci$contains_param)) {
+      if (input$param_value >= min(ci$xmin, ci$xmax) && input$param_value <= max(ci$xmin, ci$xmax))  {
         1
       } else {
         0
@@ -83,7 +83,7 @@ server <- function(input, output) {
   # Display number of intervals containing the parameter and percentage for mean
   output$intervals_containing_param <- renderText({
     total_intervals <- input$num_intervals
-    intervals_with_param <- intervals_containing_param(input$param_value, input$sample_size, input$num_intervals, input$confidence)
+    intervals_with_param <- intervals_containing_param(input$param_value, input$sample_size, input$num_intervals, as.numeric(input$confidence))
     
     if (intervals_with_param > 0) {
       percentage <- round(intervals_with_param / total_intervals * 100, 2)
@@ -100,7 +100,7 @@ server <- function(input, output) {
   # Display number of intervals containing the parameter and percentage for proportion
   output$intervals_containing_param_prop <- renderText({
     total_intervals <- input$num_intervals_prop
-    intervals_with_param <- intervals_containing_param(input$param_value_prop, input$sample_size_prop, input$num_intervals_prop, input$confidence_prop)
+    intervals_with_param <- intervals_containing_param(input$param_value_prop, input$sample_size_prop, input$num_intervals_prop, as.numeric(input$confidence_prop))
     percentage <- round(intervals_with_param / total_intervals * 100, 2)
     paste("Number of intervals containing the parameter:", intervals_with_param, "/", total_intervals, "=", percentage, "%")
   })
@@ -114,7 +114,7 @@ server <- function(input, output) {
     
     # Calculate confidence intervals for each sample
     ci_data <- lapply(sample_data, function(data) {
-      ci <- qnorm((1 - input$confidence) / 2, mean = 0, sd = 1)
+      ci <- qnorm((1 - as.numeric(input$confidence)) / 2, mean = 0, sd = 1)
       lower_bound <- mean(data$x) - ci * (1 / sqrt(input$sample_size)) # Standard deviation of the normal distribution is 1
       upper_bound <- mean(data$x) + ci * (1 / sqrt(input$sample_size))
       contains_param <- ifelse(input$param_value >= min(lower_bound, upper_bound) && input$param_value <= max(lower_bound, upper_bound), "TRUE", "FALSE")
@@ -129,7 +129,7 @@ server <- function(input, output) {
                      height = 0.2) +
       geom_point(data = do.call(rbind, ci_data), 
                  mapping = aes(y = y, x = x, color = contains_param)) +
-      scale_color_manual(values = c("TRUE" = "#009E73", "FALSE" = "#D55E00"), guide = FALSE, labels = c("TRUE" = "Contains Parameter", "FALSE" = "Doesn't Contain Parameter")) +
+      scale_color_manual(values = c("TRUE" = "#009E73", "FALSE" = "#882255"), guide = FALSE, labels = c("TRUE" = "Contains Parameter", "FALSE" = "Doesn't Contain Parameter")) +
       labs(title = "Confidence Intervals",
            x = "Mean",
            y = "Interval") +
@@ -149,7 +149,7 @@ server <- function(input, output) {
     
     # Calculate confidence intervals for each sample
     ci_data <- lapply(sample_data, function(data) {
-      ci <- qnorm((1 - input$confidence_prop) / 2, mean = 0, sd = 1)
+      ci <- qnorm((1 - as.numeric(input$confidence_prop)) / 2, mean = 0, sd = 1)
       p_hat <- mean(data$x) # Sample proportion
       se <- sqrt(p_hat * (1 - p_hat) / input$sample_size_prop) # Standard error of the proportion
       lower_bound <- p_hat - ci * se
@@ -166,7 +166,7 @@ server <- function(input, output) {
                      height = 0.2) +
       geom_point(data = do.call(rbind, ci_data), 
                  mapping = aes(y = y, x = x, color = contains_param)) +
-      scale_color_manual(values = c("TRUE" = "#009E73", "FALSE" = "#D55E00"), guide = FALSE, labels = c("TRUE" = "Contains Parameter", "FALSE" = "Doesn't Contain Parameter")) +
+      scale_color_manual(values = c("TRUE" = "#009E73", "FALSE" = "#882255"), guide = FALSE, labels = c("TRUE" = "Contains Parameter", "FALSE" = "Doesn't Contain Parameter")) +
       labs(title = "Confidence Intervals",
            x = "Proportion",
            y = "Interval") +
