@@ -16,6 +16,7 @@ ui <- fluidPage(
              sidebarLayout(
                sidebarPanel(
                  numericInput("param_value", "Population mean (μ):", value = .5, min = 0, max = 1, step = 0.1),
+                 numericInput("sd", "Population standard deviation (σ):", value = 10),
                  numericInput("sample_size", "Sample size (n):", value = 50, min = 1),
                  numericInput("num_intervals", "Number of intervals:", value = 10, min = 1),
                  selectInput("confidence", "Confidence level:",
@@ -50,12 +51,12 @@ server <- function(input, output) {
   intervals_containing_param <- function(param_value, sample_size, num_intervals, confidence) {
     # Generate data for specified number of intervals
     sample_data <- lapply(1:num_intervals, function(i) {
-      data.frame(y = i, x = rnorm(sample_size, mean = param_value, sd = 1)) # Normal distribution for mean
+      data.frame(y = i, x = rnorm(sample_size, mean = param_value, sd = input$sd)) # Normal distribution for mean
     })
     
     # Calculate confidence intervals for each sample
     ci_data <- lapply(sample_data, function(data) {
-      ci <- qnorm((1 - as.numeric(input$confidence)) / 2, mean = 0, sd = 1)
+      ci <- qnorm((1 - as.numeric(input$confidence)) / 2, mean = 0, sd = input$sd)
       se <- sd(data$x) / sqrt(sample_size) # Correct calculation of standard error
       lower_bound <- mean(data$x) - ci * se
       upper_bound <- mean(data$x) + ci * se
@@ -109,14 +110,14 @@ server <- function(input, output) {
   output$conf_plot <- renderPlotly({
     # Generate data for specified number of intervals
     sample_data <- lapply(1:input$num_intervals, function(i) {
-      data.frame(y = i, x = rnorm(input$sample_size, mean = input$param_value, sd = 1)) # Normal distribution for mean
+      data.frame(y = i, x = rnorm(input$sample_size, mean = input$param_value, sd = input$sd)) # Normal distribution for mean
     })
     
     # Calculate confidence intervals for each sample
     ci_data <- lapply(sample_data, function(data) {
-      ci <- qnorm((1 - as.numeric(input$confidence)) / 2, mean = 0, sd = 1)
-      lower_bound <- mean(data$x) - ci * (1 / sqrt(input$sample_size)) # Standard deviation of the normal distribution is 1
-      upper_bound <- mean(data$x) + ci * (1 / sqrt(input$sample_size))
+      ci <- qnorm((1 - as.numeric(input$confidence)) / 2, mean = 0, sd = input$sd)
+      lower_bound <- mean(data$x) - ci * (input$sd / sqrt(input$sample_size)) # Standard deviation of the normal distribution is 1
+      upper_bound <- mean(data$x) + ci * (input$sd / sqrt(input$sample_size))
       contains_param <- ifelse(input$param_value >= min(lower_bound, upper_bound) && input$param_value <= max(lower_bound, upper_bound), "TRUE", "FALSE")
       data.frame(y = data$y, x = mean(data$x), xmin = lower_bound, xmax = upper_bound, contains_param = contains_param)
     })
@@ -149,7 +150,7 @@ server <- function(input, output) {
     
     # Calculate confidence intervals for each sample
     ci_data <- lapply(sample_data, function(data) {
-      ci <- qnorm((1 - as.numeric(input$confidence_prop)) / 2, mean = 0, sd = 1)
+      ci <- qnorm((1 - as.numeric(input$confidence_prop)) / 2, mean = 0, sd = input$sd)
       p_hat <- mean(data$x) # Sample proportion
       se <- sqrt(p_hat * (1 - p_hat) / input$sample_size_prop) # Standard error of the proportion
       lower_bound <- p_hat - ci * se
