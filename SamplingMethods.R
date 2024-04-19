@@ -15,13 +15,17 @@ ui <- fluidPage(
     ),
     column(
       width = 4,
-      sliderInput("sample_size", "Sample Size:", value = 5, min = 1, max = 20),
+      conditionalPanel(
+        condition = "input.sample_type != 'Cluster Sampling'",
+        sliderInput("sample_size", "Sample Size:", value = 5, min = 1, max = 20)
+      ),
       selectInput("sample_type", "Sample Type:", choices = c("Random Sampling", "Stratified Sampling", "Cluster Sampling")),
       uiOutput("cluster_input"),
       actionButton("sample_btn", "Sample")
     )
   )
 )
+
 
 server <- function(input, output, session) {
   # Initialize num_clusters with a default value
