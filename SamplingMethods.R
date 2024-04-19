@@ -1,3 +1,4 @@
+
 # Required libraries
 library(tidyverse)
 library(mosaic)
@@ -47,17 +48,8 @@ server <- function(input, output, session) {
       # Perform k-means clustering
       clusters <- kmeans(plot_data_df, centers = input$num_clusters)
       
-      # Sample all points from one cluster
-      cluster_to_sample <- sample(1:max(clusters$cluster), 1)
-      
-      # Get all points from the selected cluster
-      selected_cluster_df <- plot_data_df[clusters$cluster == cluster_to_sample, ]
-      
       # Sample all points from the selected cluster
-      sample_data_df <- selected_cluster_df
-      
-      # Remove points not in the selected cluster
-      plot_data_df <- selected_cluster_df
+      sample_data_df <- plot_data_df[clusters$cluster == input$num_clusters, ]
     } else {
       # Sample random subset
       sample_numbers <- sample(1:nrow(plot_data_df), input$sample_size)
@@ -66,8 +58,6 @@ server <- function(input, output, session) {
     
     sample_data(sample_data_df)
   })
-  
-  
   
   
   output$scatter_plot <- renderPlot({
@@ -142,9 +132,11 @@ server <- function(input, output, session) {
   })
   output$cluster_input <- renderUI({
     if (input$sample_type == "Cluster Sampling") {
-      sliderInput("num_clusters", "Number of Clusters:", min = 1, max = 2, value = 1, step = 1)
-    }
+      
+      selectInput("num_clusters", "num_clusters level:",
+                  choices = c("1" = 1, "2%" = 2))    }
   })
 }
 
 shinyApp(ui = ui, server = server)
+
