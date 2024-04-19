@@ -37,6 +37,11 @@ server <- function(input, output, session) {
   })
   
   sample_data <- reactiveVal(NULL)
+
+  
+  
+
+  
   
   observeEvent(input$sample_btn, {
     req(input$sample_btn)
@@ -46,10 +51,29 @@ server <- function(input, output, session) {
     
     if (input$sample_type == "Cluster Sampling") {
       # Perform k-means clustering
-      clusters <- kmeans(plot_data_df, centers = input$num_clusters)
+      clusters <- kmeans(plot_data_df, centers = 3)
       
-      # Sample all points from the selected cluster
-      sample_data_df <- plot_data_df[clusters$cluster == input$num_clusters, ]
+      # Sample the specified number of clusters
+      sampled_clusters <- sample(unique(clusters$cluster), as.numeric(input$num_clusters))
+      
+      # Initialize a dataframe to store sampled points
+      sample_data_df <- data.frame(x = numeric(0), y = numeric(0), cluster = integer(0))
+      
+      # Loop through sampled clusters and add their points to the sample dataframe
+      for (i in sampled_clusters) {
+        cluster_points <- plot_data_df[clusters$cluster == i, ]
+        # Sample points within the cluster based on the number of points in that cluster
+        cluster_size <- nrow(cluster_points)
+        cluster_sampled <- cluster_points %>%
+          sample_n(cluster_size, replace = TRUE)
+        # Store the cluster number for each sampled point
+        cluster_sampled$cluster <- i
+        sample_data_df <- bind_rows(sample_data_df, cluster_sampled)
+      }
+      
+      # Add a flag to indicate sampled points
+      sample_data_df <- sample_data_df %>%
+        mutate(sampled = TRUE)
     } else {
       # Sample random subset
       sample_numbers <- sample(1:nrow(plot_data_df), input$sample_size)
@@ -58,6 +82,8 @@ server <- function(input, output, session) {
     
     sample_data(sample_data_df)
   })
+  
+  
   
   
   output$scatter_plot <- renderPlot({
@@ -133,8 +159,9 @@ server <- function(input, output, session) {
   output$cluster_input <- renderUI({
     if (input$sample_type == "Cluster Sampling") {
       
-      selectInput("num_clusters", "num_clusters level:",
-                  choices = c("1" = 1, "2%" = 2))    }
+      selectInput("num_clusters", "Number of Sampled Clusters:",
+                  choices = c("1" = 1, "2" = 2))    }
+    
   })
 }
 
