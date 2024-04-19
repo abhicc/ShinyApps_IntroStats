@@ -41,11 +41,6 @@ server <- function(input, output, session) {
   })
   
   sample_data <- reactiveVal(NULL)
-
-  
-  
-
-  
   
   observeEvent(input$sample_btn, {
     req(input$sample_btn)
@@ -86,7 +81,6 @@ server <- function(input, output, session) {
     
     sample_data(sample_data_df)
   })
-  
   
   
   
