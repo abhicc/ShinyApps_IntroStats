@@ -8,15 +8,6 @@
 library(tidyverse)
 library(mosaic)
 library(shiny)
-library(shiny)
-library(shiny)
-library(shiny)
-
-
-
-
-
-library(shiny)
 
 theta <- seq(0, 2 * pi, length.out = 100)
 
