@@ -26,16 +26,17 @@ ui <- fluidPage(
     ),
     
     mainPanel(
+      h3(textOutput("total_samples_text")),  # Display total number of samples
       plotOutput("histogram")
     )
   )
 )
 
+# Initialize samples
+samples <- NULL
+
 # Server
 server <- function(input, output) {
-  
-  # Initialize samples
-  samples <- NULL
   
   observeEvent(input$generate_samples, {
     n <- input$sample_size
@@ -51,9 +52,9 @@ server <- function(input, output) {
     
     # Add new samples to previous samples
     if (is.null(samples)) {
-      samples <- new_samples
+      samples <<- new_samples
     } else {
-      samples <- c(samples, new_samples)
+      samples <<- c(samples, new_samples)
     }
     
     # Calculate proportions for each sample
@@ -70,6 +71,11 @@ server <- function(input, output) {
         labs(title = "Randomization Histogram of Proportions",
              x = "Proportion (p)", y = "Frequency") +
         theme_minimal()
+    })
+    
+    # Update total number of samples
+    output$total_samples_text <- renderText({
+      paste("Total Samples:", length(samples))
     })
     
     # Perform hypothesis test
