@@ -22,12 +22,14 @@ ui <- fluidPage(
       numericInput("null_value", "Null Hypothesis: p =", value = 0.5, step = 0.1),
       selectInput("alternative", "Alternative Hypothesis:",
                   choices = c("not equal to", "less than", "greater than")),
-      actionButton("generate_samples", "Generate 1000 Samples")
+      actionButton("generate_samples", "Generate 1000 Samples"),
+      actionButton("reset_samples", "Reset Plot")
     ),
     
     mainPanel(
       h3(textOutput("total_samples_text")),  # Display total number of samples
-      plotOutput("histogram")
+      plotOutput("histogram"),
+      h4(textOutput("p_hat_text"))  # Display p_hat value
     )
   )
 )
@@ -36,7 +38,7 @@ ui <- fluidPage(
 samples <- NULL
 
 # Server
-server <- function(input, output) {
+server <- function(input, output, session) {
   
   observeEvent(input$generate_samples, {
     n <- input$sample_size
@@ -78,14 +80,18 @@ server <- function(input, output) {
       paste("Total Samples:", length(samples))
     })
     
-    # Perform hypothesis test
-    # You can use functions like t.test(), prop.test(), or other appropriate tests
-    # For proportion tests, prop.test() might be useful
-    # Example:
-    # test_result <- prop.test(input$success_count, input$sample_size, p = input$null_value, alternative = alternative)
-    
-    # Output test result
-    # print(test_result)
+    # Display p_hat value
+    output$p_hat_text <- renderText({
+      paste("p_hat =", round(p_hat, 3))
+    })
+  })
+  
+  # Reset samples and histogram
+  observeEvent(input$reset_samples, {
+    samples <<- NULL
+    output$histogram <- renderPlot(NULL)
+    output$total_samples_text <- renderText("Total Samples: 0")
+    output$p_hat_text <- renderText(NULL)
   })
 }
 
