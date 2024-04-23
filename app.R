@@ -1,8 +1,7 @@
-
 ################################################################################
 # This app demonstrates the concept of skewness (symmetricity) in terms of 
 # histograms and boxplots. It also demonstrates how the mean and standard deviation
-# affects these plots, and how numerical summaries are affected by extreme outliers.
+# affect these plots, and how numerical summaries are affected by extreme outliers.
 ################################################################################
 
 HappyPlanetIndex <- read.csv("HappyPlanetIndex.csv", row.names = 1)
@@ -20,8 +19,7 @@ library(fGarch)
 library(shiny)
 library(gridExtra)
 
-# UI function
-# UI function
+# User Interface
 ui <- fluidPage(
   titlePanel("Summarizing Numerical Data: Visualizing Mean and Median"),
   tabsetPanel(
@@ -81,6 +79,7 @@ ui <- fluidPage(
   )
 )
 
+# Server
 server <- function(input, output, session) {
   
   output$dataset_select <- renderUI({
@@ -309,5 +308,6 @@ server <- function(input, output, session) {
   
 }
 
+# Run
 shinyApp(ui = ui, server = server)
 
