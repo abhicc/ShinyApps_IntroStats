@@ -79,7 +79,20 @@ server <- function(input, output, session) {
       clusters <- kmeans(plot_data_df, centers = 3)
       
       # Calculate the approximate number of points to sample from each cluster
-      sample_size_per_cluster <- ceiling(input$sample_size / length(unique(clusters$cluster)))
+      # Calculate the approximate number of points to sample from each cluster
+      total_points <- nrow(plot_data_df)
+      num_clusters <- length(unique(clusters$cluster))
+      sample_size_per_cluster <- ceiling(input$sample_size / num_clusters)
+      
+      # Adjust sample size per cluster to ensure min/max points per cluster
+      min_cluster_size <- ceiling(input$sample_size / 3) - 1
+      max_cluster_size <- floor(input$sample_size / 3) + 1
+      
+      # Ensure sample size per cluster does not exceed max or fall below min
+      sample_size_per_cluster <- pmax(pmin(sample_size_per_cluster, max_cluster_size), min_cluster_size)
+      
+      
+      
       
       # Initialize a dataframe to store sampled points
       sample_data_df <- data.frame(x = numeric(0), y = numeric(0), cluster = integer(0))
@@ -111,8 +124,6 @@ server <- function(input, output, session) {
     }
   })
   
-  
-  
   output$scatter_plot <- renderPlot({
     plot_data_df <- plot_data()
     plot(plot_data_df$x, plot_data_df$y, type = "n", xlab = "", ylab = "", xlim = c(-2.8, 2.8), ylim = c(-1.9, 1.9), main = "Sampling Methods", axes = FALSE, asp = 1)
@@ -139,8 +150,7 @@ server <- function(input, output, session) {
         hull <- c(hull, hull[1]) # Add the first point to close the polygon
         lines(cluster_points$x[hull], cluster_points$y[hull], lty = 2, col = "black")
       }
-    }  
-    else if (input$sample_type == "Stratified Sampling") {
+    } else if (input$sample_type == "Stratified Sampling") {
       # Perform k-means clustering
       clusters <- kmeans(plot_data_df, centers = 3)
       
@@ -165,8 +175,7 @@ server <- function(input, output, session) {
         hull <- c(hull, hull[1]) # Add the first point to close the polygon
         lines(cluster_points$x[hull], cluster_points$y[hull], lty = 2, col = "black")
       }
-    }
-    else {
+    } else {
       # Plot all points in black
       points(plot_data_df$x, plot_data_df$y, pch = 16, col = "black")
     }
@@ -186,7 +195,6 @@ server <- function(input, output, session) {
     }
   })
   
-  
   output$cluster_input <- renderUI({
     if (input$sample_type == "Cluster Sampling") {
       selectInput("num_clusters", "Number of Sampled Clusters:",
@@ -196,5 +204,6 @@ server <- function(input, output, session) {
     }
   })
 }
+
 
 shinyApp(ui = ui, server = server)
