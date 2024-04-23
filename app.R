@@ -4,6 +4,8 @@
 # affect these plots, and how numerical summaries are affected by extreme outliers.
 ################################################################################
 
+setwd("/cloud/project/Preuploaded datasets for app.R")
+
 HappyPlanetIndex <- read.csv("HappyPlanetIndex.csv", row.names = 1)
 FloridaLakes <- read.csv("FloridaLakes.csv", row.names = 1)
 SleepStudy <- read.csv("SleepStudy.csv", row.names = 1)
@@ -22,6 +24,7 @@ library(gridExtra)
 # User Interface
 ui <- fluidPage(
   titlePanel("Summarizing Numerical Data: Visualizing Mean and Median"),
+  # Tab for Fixed Mean and SD
   tabsetPanel(
     tabPanel("Fixed Mean and SD",
              fluidRow(
@@ -37,7 +40,7 @@ ui <- fluidPage(
                column(2, tableOutput("table"))
              )
     ),
-    
+    # Tab for Dynamic Mean and SD
     tabPanel("Dynamic Mean and SD",
              fluidRow(
                column(3, sliderInput(inputId = "mean_value_dynamic",
@@ -62,7 +65,7 @@ ui <- fluidPage(
                column(6, plotOutput("boxplot_dynamic"))
              )
     ),
-    
+    # Tab for Preloaded Datasets
     tabPanel("Preloaded Dataset",
              fluidRow(
                column(5,
@@ -81,7 +84,7 @@ ui <- fluidPage(
 
 # Server
 server <- function(input, output, session) {
-  
+  # Preloaded dataset
   output$dataset_select <- renderUI({
     return(selectInput("dataset", "Choose a Dataset", choices = c("HappyPlanetIndex", "USStates", "SleepStudy", "StudentSurvey", "HomesForSale", "FloridaLakes" ), selected = "HappyPlanetIndex"))
   })
@@ -150,6 +153,7 @@ server <- function(input, output, session) {
     }
   })
   
+  # Plot for preuploaded dataset tab
   output$dataset_plot <- renderPlot({
     req(input$var)
     dataset <- switch(input$dataset,
@@ -197,7 +201,7 @@ server <- function(input, output, session) {
   })
   
   
-  
+  # Fixed mean and SD
   set.seed(422024)
   df <- reactive({
     if(input$shape == "Symmetric") {
@@ -221,6 +225,7 @@ server <- function(input, output, session) {
     return(df)
   })
   
+  # Dynamic mean and SD
   df_dynamic <- reactive({
     if(input$shape_dynamic == "Symmetric") {
       val <- rnorm(1000, mean = input$mean_value_dynamic, sd = input$sd_value_dynamic)
@@ -243,6 +248,7 @@ server <- function(input, output, session) {
     return(df)
   })
   
+  # Histogram for fixed mean and SD
   output$hist <- renderPlot({
     ggplot(data = df(), aes(x = value)) +
       geom_histogram(mapping = aes(y = ..density.., fill = "Histogram"), color = "black", bins = 45) +
@@ -255,6 +261,7 @@ server <- function(input, output, session) {
       theme(legend.position = "none")
   })
   
+  # Boxplot for fixed mean and SD
   output$boxplot <- renderPlot({
     ggplot(data = df()) +
       geom_boxplot(mapping = aes(x = value, fill = "Boxplot"), color = "black") +
@@ -268,6 +275,7 @@ server <- function(input, output, session) {
       theme(legend.position = "right")
   })
   
+  # Summary table for fixed mean and SD
   output$table <- renderTable({
     data <- summary(df()$value)
     data_iqr <- IQR(df()$value, na.rm = TRUE)  # Handle missing values
@@ -279,7 +287,7 @@ server <- function(input, output, session) {
     return(atable)
   })
   
-  
+  # Histogram for dynamic mean and SD
   output$hist_dynamic <- renderPlot({
     ggplot(data = df_dynamic(), aes(x = value)) +
       geom_histogram(mapping = aes(y = ..density.., fill = "Histogram"), color = "black", bins = 45) +
@@ -293,6 +301,7 @@ server <- function(input, output, session) {
       theme(legend.position = "none")
   })
   
+  # Boxplot for dynamic mean and SD
   output$boxplot_dynamic <- renderPlot({
     ggplot(data = df_dynamic()) +
       geom_boxplot(mapping = aes(x = value, fill = "Boxplot"), color = "black") +
@@ -308,6 +317,5 @@ server <- function(input, output, session) {
   
 }
 
-# Run
+# Run app
 shinyApp(ui = ui, server = server)
-
