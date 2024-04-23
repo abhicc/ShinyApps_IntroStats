@@ -17,7 +17,7 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       # All inputs on sidebar
-      numericInput("sample_size", "Sample Size:", value = 100, step = 1),
+      numericInput("sample_size", "Sample Size: n =", value = 100, step = 1),
       numericInput("success_count", "Count (Number of Successes):", value = 50, step = 1),
       numericInput("null_value", "Null Hypothesis: p =", value = 0.5, step = 0.1),
       selectInput("alternative", "Alternative Hypothesis:",
@@ -40,7 +40,7 @@ server <- function(input, output) {
   
   observeEvent(input$generate_samples, {
     n <- input$sample_size
-    p <- input$success_count / n
+    p_hat <- input$success_count / n
     
     alternative <- switch(input$alternative,
                           "not equal to" = "two.sided",
@@ -48,7 +48,7 @@ server <- function(input, output) {
                           "greater than" = "greater")
     
     # Generate 1000 samples
-    new_samples <- replicate(1000, rbinom(1, size = n, prob = p))
+    new_samples <- replicate(1000, rbinom(1, size = n, prob = input$null_value))
     
     # Add new samples to previous samples
     if (is.null(samples)) {
@@ -67,7 +67,7 @@ server <- function(input, output) {
     output$histogram <- renderPlot({
       ggplot(df, aes(x = proportions)) +
         geom_histogram(binwidth = 0.05, fill = "#009E73", color = "black") +
-        geom_vline(xintercept = input$null_value, linetype = "dashed", color = "#D55E00", size = 1) +  # Add vertical line at p hat
+        geom_vline(xintercept = p_hat, linetype = "dashed", color = "#D55E00", size = 1) +  # Add vertical line at p hat
         labs(title = "Randomization Histogram of Proportions",
              x = "Proportion (p)", y = "Frequency") +
         theme_minimal()
