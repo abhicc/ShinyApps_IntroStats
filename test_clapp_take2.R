@@ -29,7 +29,7 @@ library(plotly)
   })
   
   # Display number of intervals containing μ and percentage
-  output$intervals_containing_mu <- renderText({
+  intervals_containing_mu <- renderText({
     total_intervals <- 100
     intervals_with_mu <- intervals_containing_mu()
     percentage <- round(intervals_with_mu / total_intervals * 100, 2)
