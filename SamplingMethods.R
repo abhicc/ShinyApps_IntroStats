@@ -14,7 +14,6 @@ ui <- fluidPage(
     column(
       width = 4,
       
-      
       selectInput("sample_type", "Sample Type:", choices = c("Random Sampling", "Stratified Sampling", "Cluster Sampling")),
       uiOutput("cluster_input"),
       actionButton("sample_btn", "Sample")
@@ -74,25 +73,15 @@ server <- function(input, output, session) {
       
       # Update the reactive value with sampled data
       sample_data(sample_data_df)
-    } else if (input$sample_type == "Stratified Sampling") {
+    }else if (input$sample_type == "Stratified Sampling") {
       # Perform k-means clustering
       clusters <- kmeans(plot_data_df, centers = 3)
       
-      # Calculate the approximate number of points to sample from each cluster
-      # Calculate the approximate number of points to sample from each cluster
-      total_points <- nrow(plot_data_df)
-      num_clusters <- length(unique(clusters$cluster))
-      sample_size_per_cluster <- ceiling(input$sample_size / num_clusters)
+      # Calculate the sample size per cluster
+      sample_size_per_cluster <- floor(input$sample_size / length(unique(clusters$cluster)))
       
-      # Adjust sample size per cluster to ensure min/max points per cluster
-      min_cluster_size <- ceiling(input$sample_size / 3) - 1
-      max_cluster_size <- floor(input$sample_size / 3) + 1
-      
-      # Ensure sample size per cluster does not exceed max or fall below min
-      sample_size_per_cluster <- pmax(pmin(sample_size_per_cluster, max_cluster_size), min_cluster_size)
-      
-      
-      
+      # Calculate the remainder for distribution
+      remainder <- input$sample_size %% length(unique(clusters$cluster))
       
       # Initialize a dataframe to store sampled points
       sample_data_df <- data.frame(x = numeric(0), y = numeric(0), cluster = integer(0))
@@ -100,29 +89,27 @@ server <- function(input, output, session) {
       # Loop through clusters and sample points from each cluster
       for (i in unique(clusters$cluster)) {
         cluster_points <- plot_data_df[clusters$cluster == i, ]
-        # Sample points within the cluster
+        # Determine sample size for this cluster
+        cluster_sample_size <- sample_size_per_cluster + ifelse(i <= remainder, 1, 0)
+        # Sample points from the cluster
         cluster_sampled <- cluster_points %>%
-          sample_n(sample_size_per_cluster, replace = TRUE)
+          sample_n(cluster_sample_size, replace = FALSE)
         # Store the cluster number for each sampled point
         cluster_sampled$cluster <- i
         sample_data_df <- bind_rows(sample_data_df, cluster_sampled)
       }
       
-      # Add a flag to indicate sampled points
-      sample_data_df <- sample_data_df %>%
-        mutate(sampled = TRUE)
-      
       # Update the reactive value with sampled data
       sample_data(sample_data_df)
     } else {
       # Sample random subset
-      sample_numbers <- sample(1:nrow(plot_data_df), input$sample_size)
-      sample_data_df <- plot_data_df[sample_numbers, ]
-      
-      # Update the reactive value with sampled data
+      sample_data_df <- plot_data() %>%
+        sample_n(input$sample_size, replace = FALSE)
       sample_data(sample_data_df)
     }
   })
+  
+  
   
   output$scatter_plot <- renderPlot({
     plot_data_df <- plot_data()
