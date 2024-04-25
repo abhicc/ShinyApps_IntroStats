@@ -1,4 +1,3 @@
-
 library(tidyverse)
 library(mosaic)
 library(shiny)
@@ -85,13 +84,16 @@ server <- function(input, output, session) {
       # Calculate the number of base samples per cluster
       sample_size_per_cluster <- floor(input$sample_size / 3)
       
+      # Calculate remainder
+      remainder <- input$sample_size %% 3
+      
       # Sample base points from each data frame
       sampled_cluster1 <- plot_data_df %>% 
         filter(cluster == 1) %>%
-        sample_n(sample_size_per_cluster, replace = FALSE)
+        sample_n(sample_size_per_cluster + ifelse(remainder >= 1, 1, 0), replace = FALSE)
       sampled_cluster2 <- plot_data_df %>% 
         filter(cluster == 2) %>%
-        sample_n(sample_size_per_cluster, replace = FALSE)
+        sample_n(sample_size_per_cluster + ifelse(remainder >= 2, 1, 0), replace = FALSE)
       sampled_cluster3 <- plot_data_df %>% 
         filter(cluster == 3) %>%
         sample_n(sample_size_per_cluster, replace = FALSE)
@@ -123,44 +125,48 @@ server <- function(input, output, session) {
     if (input$sample_type == "Cluster Sampling") {
       clusters_data <- clusters()
       
-      # Plot clusters with mixed colors
-      for (i in 1:max(clusters_data$cluster)) {
-        cluster_points <- plot_data_df[clusters_data$cluster == i, ]
-        # Shuffle colors for points within each cluster
-        shuffle_colors <- sample(1:nrow(cluster_points))
-        points(cluster_points$x, cluster_points$y, col = shuffle(colors(), nrow(cluster_points)), pch = 16)
-      }
-      
-      # Add dashed lines connecting points within each cluster
-      for (i in 1:max(clusters_data$cluster)) {
-        cluster_points <- plot_data_df[clusters_data$cluster == i, ]
-        hull <- chull(cluster_points$x, cluster_points$y)
-        hull <- c(hull, hull[1]) # Add the first point to close the polygon
-        lines(cluster_points$x[hull], cluster_points$y[hull], lty = 2, col = "black")
+      if (!is.null(clusters_data)) { # Add a check for NULL or empty clusters_data
+        # Plot clusters with mixed colors
+        for (i in 1:max(clusters_data$cluster)) {
+          cluster_points <- plot_data_df[clusters_data$cluster == i, ]
+          # Shuffle colors for points within each cluster
+          shuffle_colors <- sample(1:nrow(cluster_points))
+          points(cluster_points$x, cluster_points$y, col = shuffle(colors(), nrow(cluster_points)), pch = 16)
+        }
+        
+        # Add dashed lines connecting points within each cluster
+        for (i in 1:max(clusters_data$cluster)) {
+          cluster_points <- plot_data_df[clusters_data$cluster == i, ]
+          hull <- chull(cluster_points$x, cluster_points$y)
+          hull <- c(hull, hull[1]) # Add the first point to close the polygon
+          lines(cluster_points$x[hull], cluster_points$y[hull], lty = 2, col = "black")
+        }
       }
     } else if (input$sample_type == "Stratified Sampling") {
       clusters_data <- clusters()
       
-      # Plot clusters with mixed colors
-      for (i in 1:max(clusters_data$cluster)) {
-        cluster_points <- plot_data_df[clusters_data$cluster == i, ]
-        # Shuffle colors within each cluster
-        shuffle_colors <- sample(1:nrow(cluster_points))
-        points(cluster_points$x, cluster_points$y, col = shuffle(colors(), nrow(cluster_points)), pch = 16)
-      }
-      
-      # Duplicate clusters for coloring
-      duplicate_clusters <- clusters_data$cluster + max(clusters_data$cluster)
-      
-      # Plot duplicate clusters
-      points(plot_data_df$x, plot_data_df$y, col = duplicate_clusters, pch = 16)
-      
-      # Add dashed lines connecting points within each cluster
-      for (i in 1:max(clusters_data$cluster)) {
-        cluster_points <- plot_data_df[clusters_data$cluster == i, ]
-        hull <- chull(cluster_points$x, cluster_points$y)
-        hull <- c(hull, hull[1]) # Add the first point to close the polygon
-        lines(cluster_points$x[hull], cluster_points$y[hull], lty = 2, col = "black")
+      if (!is.null(clusters_data)) { # Add a check for NULL or empty clusters_data
+        # Plot clusters with mixed colors
+        for (i in 1:max(clusters_data$cluster)) {
+          cluster_points <- plot_data_df[clusters_data$cluster == i, ]
+          # Shuffle colors within each cluster
+          shuffle_colors <- sample(1:nrow(cluster_points))
+          points(cluster_points$x, cluster_points$y, col = shuffle(colors(), nrow(cluster_points)), pch = 16)
+        }
+        
+        # Duplicate clusters for coloring
+        duplicate_clusters <- clusters_data$cluster + max(clusters_data$cluster)
+        
+        # Plot duplicate clusters
+        points(plot_data_df$x, plot_data_df$y, col = duplicate_clusters, pch = 16)
+        
+        # Add dashed lines connecting points within each cluster
+        for (i in 1:max(clusters_data$cluster)) {
+          cluster_points <- plot_data_df[clusters_data$cluster == i, ]
+          hull <- chull(cluster_points$x, cluster_points$y)
+          hull <- c(hull, hull[1]) # Add the first point to close the polygon
+          lines(cluster_points$x[hull], cluster_points$y[hull], lty = 2, col = "black")
+        }
       }
     } else { 
       # Plot all points in black
@@ -172,7 +178,7 @@ server <- function(input, output, session) {
       if (input$sample_type == "Cluster Sampling") {
         if (!is.null(sampled_clusters$clusters)) {
           for (i in sampled_clusters$clusters) {
-            cluster_points <- plot_data_df[clusters()$cluster == i, ]
+            cluster_points <- plot_data_df[clusters_data$cluster == i, ]
             points(cluster_points$x, cluster_points$y, pch = 21, bg = "red", cex = 1.5)
           }
         }
@@ -190,6 +196,6 @@ server <- function(input, output, session) {
       sliderInput("sample_size", "Sample Size:", value = 5, min = 1, max = 20)
     }
   })
-}
+} 
 
 shinyApp(ui = ui, server = server)
