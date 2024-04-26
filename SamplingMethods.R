@@ -5,8 +5,8 @@ library(shiny)
 # Generate random coordinates within the rectangle
 plot_data <- reactive({
   num_points <- 50
-  x <- runif(num_points, min = -2.8, max = 2.8)
-  y <- runif(num_points, min = -1.9, max = 1.9)  # Adjusted y-limits
+  x <- runif(num_points, min = -4.4, max = 4.4)
+  y <- runif(num_points, min = -1.8, max = 1.8)  # Adjusted y-limits
   data.frame(x = x, y = y)
 })
 
@@ -19,8 +19,6 @@ observe({
   # Update the reactive value with the result
   clusters(clusters_data)
 })
-
-
 
 ui <- fluidPage(
   tags$head(
@@ -65,11 +63,11 @@ ui <- fluidPage(
   fluidRow(
     column(
       width = 12,
+      textOutput("plot_title"),
       plotOutput("scatter_plot")
     )
   )
 )
-
 
 server <- function(input, output, session) {
   # Reactive value to store sampled clusters
@@ -158,7 +156,7 @@ server <- function(input, output, session) {
   
   output$scatter_plot <- renderPlot({
     plot_data_df <- plot_data()
-    plot(plot_data_df$x, plot_data_df$y, type = "n", xlab = "", ylab = "", xlim = c(-2.8, 2.8), ylim = c(-1.9, 1.9), main = "Sampling Methods", axes = FALSE, asp = 1)
+    plot(plot_data_df$x, plot_data_df$y, type = "n", xlab = "", ylab = "", xlim = c(-2.8, 2.8), ylim = c(-1.9, 1.9), main = input$sample_type, axes = FALSE, asp = 1)
     
     # Draw rectangle around the plot area
     rect(-4.5, -1.9, 4.5, 1.9, border = "black", lwd = 2)
@@ -182,8 +180,8 @@ server <- function(input, output, session) {
           hull <- c(hull, hull[1]) # Add the first point to close the polygon
           lines(cluster_points$x[hull], cluster_points$y[hull], lty = 2, col = "black")
         }
-   
-    }
+        
+      }
     } else if (input$sample_type == "Stratified Sampling") {
       clusters_data <- clusters()
       
@@ -239,6 +237,9 @@ server <- function(input, output, session) {
       sliderInput("sample_size", "Sample Size:", value = 5, min = 1, max = 20)
     }
   })
+  
+
 } 
 
 shinyApp(ui = ui, server = server)
+
