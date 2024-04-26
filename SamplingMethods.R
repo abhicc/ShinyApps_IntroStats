@@ -238,8 +238,19 @@ server <- function(input, output, session) {
     }
   })
   
-
+  # Clear sample_data reactive value when sample type changes or sample button is clicked
+  observeEvent(input$sample_btn, {
+    if (!is.null(sample_data())) {
+      sample_data(NULL)
+    }
+  })
+  
+  observeEvent(input$sample_type, {
+    if (!is.null(sample_data())) {
+      sample_data(NULL)
+    }
+  })
+  
 } 
 
 shinyApp(ui = ui, server = server)
-
