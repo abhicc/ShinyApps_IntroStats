@@ -245,11 +245,7 @@ server <- function(input, output, session) {
     }
   })
   
-  observeEvent(input$sample_type, {
-    if (!is.null(sample_data())) {
-      sample_data(NULL)
-    }
-  })
+ 
   
 } 
 
