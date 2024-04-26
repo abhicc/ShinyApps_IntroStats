@@ -10,8 +10,16 @@ plot_data <- reactive({
   data.frame(x = x, y = y)
 })
 
-# Initialize clusters globally
+# Initialize clusters within a reactive expression
 clusters <- reactiveVal(NULL)
+
+observe({
+  # Call kmeans inside the observer to ensure it's executed reactively
+  clusters_data <- kmeans(plot_data(), centers = 3)
+  # Update the reactive value with the result
+  clusters(clusters_data)
+})
+
 
 ui <- fluidPage(
   titlePanel("Sampling Methods"),
@@ -46,8 +54,7 @@ server <- function(input, output, session) {
     
     if (input$sample_type == "Cluster Sampling") {
       # Perform k-means clustering
-      clusters_data <- kmeans(plot_data_df, centers = 3)
-      clusters(clusters_data)
+      clusters_data <- clusters()
       
       # Sample the specified number of clusters
       sampled_clusters$clusters <- sample(unique(clusters_data$cluster), as.numeric(input$num_clusters))
@@ -141,14 +148,15 @@ server <- function(input, output, session) {
           hull <- c(hull, hull[1]) # Add the first point to close the polygon
           lines(cluster_points$x[hull], cluster_points$y[hull], lty = 2, col = "black")
         }
-      }
+   
+    }
     } else if (input$sample_type == "Stratified Sampling") {
       clusters_data <- clusters()
       
       if (!is.null(clusters_data)) { # Add a check for NULL or empty clusters_data
         # Plot clusters with mixed colors
         for (i in 1:max(clusters_data$cluster)) {
-          cluster_points <- plot_data_df[clusters_data$cluster == i, ]
+          cluster_points <- plot_data_df[plot_data_df$cluster == i, ]
           # Shuffle colors within each cluster
           shuffle_colors <- sample(1:nrow(cluster_points))
           points(cluster_points$x, cluster_points$y, col = shuffle(colors(), nrow(cluster_points)), pch = 16)
