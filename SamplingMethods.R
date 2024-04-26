@@ -4,7 +4,7 @@ library(shiny)
 # Generate random coordinates within the rectangle
 plot_data <- reactive({
   num_points <- 100
-  x <- runif(num_points, min = -4.4, max = 4.4)
+  x <- runif(num_points, min = -4.8, max = 4.8)
   y <- runif(num_points, min = -1.8, max = 1.8)  # Adjusted y-limits
   data.frame(x = x, y = y)
 })
@@ -128,7 +128,7 @@ server <- function(input, output, session) {
     plot(plot_data_df$x, plot_data_df$y, type = "n", xlab = "", ylab = "", xlim = c(-2.8, 2.8), ylim = c(-1.9, 1.9), main = input$sample_type, axes = FALSE, asp = 1)
     
     # Draw rectangle around the plot area
-    rect(-4.5, -1.9, 4.5, 1.9, border = "black", lwd = 2)
+    rect(-5, -2, 5, 2, border = "black", lwd = 2)
     if (input$sample_type == "Cluster Sampling") {
       clusters_data <- clusters()
       
