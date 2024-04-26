@@ -1,10 +1,9 @@
 library(tidyverse)
-library(mosaic)
 library(shiny)
 
 # Generate random coordinates within the rectangle
 plot_data <- reactive({
-  num_points <- 50
+  num_points <- 100
   x <- runif(num_points, min = -4.4, max = 4.4)
   y <- runif(num_points, min = -1.8, max = 1.8)  # Adjusted y-limits
   data.frame(x = x, y = y)
@@ -23,49 +22,20 @@ observe({
 })
 
 ui <- fluidPage(
-  tags$head(
-    tags$style(
-      HTML(
-        "
-        #sample_btn {
-          background-color: #d3d3d3; /* Green */
-          border: none;
-          color: black;
-          padding: 15px 32px;
-          text-align: center;
-          text-decoration: none;
-          display: inline-block;
-          font-size: 16px;
-          margin: 4px 2px;
-          transition-duration: 0.4s;
-          cursor: pointer;
-          border-radius: 8px;
-        }
-
-        #sample_btn:hover {
-          background-color: #d3d3d3; /* Light Grey */
-          color: white;
-        }
-        "
-      )
-    )
-  ),
   titlePanel("Sampling Methods"),
   fluidRow(
     column(
       width = 4,
       selectInput("sample_type", "Sample Type:", choices = c("Random Sampling", "Stratified Sampling", "Cluster Sampling"))
     ), 
-    column(width = 4,
+    column(width = 5,
            uiOutput("cluster_input")), 
-    column(width = 1), # Blank column
     column(width = 3,
            actionButton("sample_btn", "Sample", style = "margin-top: 25px;"))
   ), 
   fluidRow(
     column(
       width = 12,
-      textOutput("plot_title"),
       plotOutput("scatter_plot")
     )
   )
@@ -83,9 +53,6 @@ server <- function(input, output, session) {
     # Get coordinates from the first plot
     plot_data_df <- plot_data()
     
-    # Initialize remainder
-    remainder <- 0
-    
     if (input$sample_type == "Cluster Sampling") {
       # Perform k-means clustering
       clusters_data <- clusters()
@@ -96,15 +63,15 @@ server <- function(input, output, session) {
       # Initialize a dataframe to store sampled points
       sample_data_df <- data.frame(x = numeric(0), y = numeric(0), cluster = integer(0))
       
-      # Loop through sampled clusters and add their points to the sample dataframe
-      for (i in sampled_clusters$clusters) {
+      # Calculate the total number of points to sample
+      total_points_to_sample <- input$sample_size
+      
+      # Loop through all clusters and add their points to the sample dataframe
+      for (i in unique(clusters_data$cluster)) {
         cluster_points <- plot_data_df[clusters_data$cluster == i, ]
-        # Sample points within the cluster based on the number of points in that cluster
-        cluster_size <- nrow(cluster_points)
+        # Sample points from the current cluster with replacement until we reach the desired number of sampled points
         cluster_sampled <- cluster_points %>%
-          sample_n(cluster_size, replace = TRUE)
-        # Store the cluster number for each sampled point
-        cluster_sampled$cluster <- i
+          sample_n(total_points_to_sample, replace = TRUE)
         sample_data_df <- bind_rows(sample_data_df, cluster_sampled)
       }
       
@@ -114,7 +81,7 @@ server <- function(input, output, session) {
       
       # Update the reactive value with sampled data
       sample_data(sample_data_df)
-    } else if (input$sample_type == "Stratified Sampling") {
+    }  else if (input$sample_type == "Stratified Sampling") {
       clusters_data <- clusters()
       
       plot_data_df$cluster <- clusters_data$cluster
@@ -162,27 +129,43 @@ server <- function(input, output, session) {
     
     # Draw rectangle around the plot area
     rect(-4.5, -1.9, 4.5, 1.9, border = "black", lwd = 2)
-    
     if (input$sample_type == "Cluster Sampling") {
       clusters_data <- clusters()
       
-      if (!is.null(clusters_data)) { # Add a check for NULL or empty clusters_data
-        # Plot clusters with predefined colors for each point within a cluster
-        for (i in 1:max(clusters_data$cluster)) {
+      if (!is.null(clusters_data)) { 
+        # Determine the number of clusters
+        num_clusters <- length(unique(clusters_data$cluster))
+        
+        # Define the number of colors per cluster
+        colors_per_cluster <- 5
+        
+        # Calculate total colors needed
+        total_colors <- num_clusters * colors_per_cluster
+        
+        # Repeat the cluster colors to match the required number of colors
+        cluster_colors_cycle <- rep(cluster_colors, ceiling(total_colors / length(cluster_colors)))
+        
+        # Plot points with colors based on their cluster membership
+        for (i in unique(clusters_data$cluster)) {
           cluster_points <- plot_data_df[clusters_data$cluster == i, ]
-          points(cluster_points$x, cluster_points$y, col = cluster_colors[1:nrow(cluster_points)], pch = 16)
+          num_points_in_cluster <- nrow(cluster_points)
+          colors <- rep(cluster_colors_cycle[((i - 1) * colors_per_cluster + 1):min(total_colors, i * colors_per_cluster)], each = ceiling(num_points_in_cluster / colors_per_cluster))[1:num_points_in_cluster]
+          points(cluster_points$x, cluster_points$y, col = colors, pch = 16)
         }
         
         # Add dashed lines connecting points within each cluster
-        for (i in 1:max(clusters_data$cluster)) {
+        for (i in unique(clusters_data$cluster)) {
           cluster_points <- plot_data_df[clusters_data$cluster == i, ]
           hull <- chull(cluster_points$x, cluster_points$y)
           hull <- c(hull, hull[1]) # Add the first point to close the polygon
           lines(cluster_points$x[hull], cluster_points$y[hull], lty = 2, col = "black")
         }
-        
       }
-    } else if (input$sample_type == "Stratified Sampling") {
+    
+      
+        
+      
+    }  else if (input$sample_type == "Stratified Sampling") {
       clusters_data <- clusters()
       
       if (!is.null(clusters_data)) { # Add a check for NULL or empty clusters_data
@@ -232,13 +215,14 @@ server <- function(input, output, session) {
       selectInput("num_clusters", "Number of Sampled Clusters:",
                   choices = c("1" = 1, "2" = 2))    
     } else {
-      sliderInput("sample_size", "Sample Size:", value = 5, min = 1, max = 20)
+      sliderInput("sample_size", "Sample Size:", value = 5, min = 1, max = 15)
     }
   })
   
   # Clear sample_data reactive value when sample type changes or sample button is clicked
-  observeEvent(input$sampletype, {
-    if (!is.null(sample_data())) {
+  observeEvent(input$sample_type, {
+    req(input$sample_btn)
+    if (!is.null(sample_data()) && !is.null(input$sample_type)) {
       sample_data(NULL)
     }
   })
