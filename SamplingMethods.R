@@ -10,6 +10,8 @@ plot_data <- reactive({
   data.frame(x = x, y = y)
 })
 
+cluster_colors <- c("blue", "green", "red", "orange", "purple", "yellow", "cyan", "magenta", "brown", "grey")
+
 # Initialize clusters within a reactive expression
 clusters <- reactiveVal(NULL)
 
@@ -165,12 +167,10 @@ server <- function(input, output, session) {
       clusters_data <- clusters()
       
       if (!is.null(clusters_data)) { # Add a check for NULL or empty clusters_data
-        # Plot clusters with mixed colors
+        # Plot clusters with predefined colors for each point within a cluster
         for (i in 1:max(clusters_data$cluster)) {
           cluster_points <- plot_data_df[clusters_data$cluster == i, ]
-          # Shuffle colors for points within each cluster
-          shuffle_colors <- sample(1:nrow(cluster_points))
-          points(cluster_points$x, cluster_points$y, col = shuffle(colors(), nrow(cluster_points)), pch = 16)
+          points(cluster_points$x, cluster_points$y, col = cluster_colors[1:nrow(cluster_points)], pch = 16)
         }
         
         # Add dashed lines connecting points within each cluster
@@ -186,12 +186,10 @@ server <- function(input, output, session) {
       clusters_data <- clusters()
       
       if (!is.null(clusters_data)) { # Add a check for NULL or empty clusters_data
-        # Plot clusters with mixed colors
+        # Plot clusters with predefined colors
         for (i in 1:max(clusters_data$cluster)) {
           cluster_points <- plot_data_df[plot_data_df$cluster == i, ]
-          # Shuffle colors within each cluster
-          shuffle_colors <- sample(1:nrow(cluster_points))
-          points(cluster_points$x, cluster_points$y, col = shuffle(colors(), nrow(cluster_points)), pch = 16)
+          points(cluster_points$x, cluster_points$y, col = cluster_colors[i], pch = 16)
         }
         
         # Duplicate clusters for coloring
@@ -239,13 +237,11 @@ server <- function(input, output, session) {
   })
   
   # Clear sample_data reactive value when sample type changes or sample button is clicked
-  observeEvent(input$sample_btn, {
+  observeEvent(input$sampletype, {
     if (!is.null(sample_data())) {
       sample_data(NULL)
     }
   })
-  
- 
   
 } 
 
