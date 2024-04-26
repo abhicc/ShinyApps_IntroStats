@@ -21,21 +21,55 @@ observe({
 })
 
 
+
 ui <- fluidPage(
+  tags$head(
+    tags$style(
+      HTML(
+        "
+        #sample_btn {
+          background-color: #d3d3d3; /* Green */
+          border: none;
+          color: black;
+          padding: 15px 32px;
+          text-align: center;
+          text-decoration: none;
+          display: inline-block;
+          font-size: 16px;
+          margin: 4px 2px;
+          transition-duration: 0.4s;
+          cursor: pointer;
+          border-radius: 8px;
+        }
+
+        #sample_btn:hover {
+          background-color: #d3d3d3; /* Light Grey */
+          color: white;
+        }
+        "
+      )
+    )
+  ),
   titlePanel("Sampling Methods"),
   fluidRow(
     column(
-      width = 10,
-      plotOutput("scatter_plot")
-    ),
+      width = 4,
+      selectInput("sample_type", "Sample Type:", choices = c("Random Sampling", "Stratified Sampling", "Cluster Sampling"))
+    ), 
+    column(width = 4,
+           uiOutput("cluster_input")), 
+    column(width = 1), # Blank column
+    column(width = 3,
+           actionButton("sample_btn", "Sample", style = "margin-top: 25px;"))
+  ), 
+  fluidRow(
     column(
-      width = 2,
-      selectInput("sample_type", "Sample Type:", choices = c("Random Sampling", "Stratified Sampling", "Cluster Sampling")),
-      uiOutput("cluster_input"),
-      actionButton("sample_btn", "Sample")
+      width = 12,
+      plotOutput("scatter_plot")
     )
   )
 )
+
 
 server <- function(input, output, session) {
   # Reactive value to store sampled clusters
@@ -127,7 +161,7 @@ server <- function(input, output, session) {
     plot(plot_data_df$x, plot_data_df$y, type = "n", xlab = "", ylab = "", xlim = c(-2.8, 2.8), ylim = c(-1.9, 1.9), main = "Sampling Methods", axes = FALSE, asp = 1)
     
     # Draw rectangle around the plot area
-    rect(-5, -1.9, 5, 1.9, border = "black", lwd = 2)
+    rect(-4.5, -1.9, 4.5, 1.9, border = "black", lwd = 2)
     
     if (input$sample_type == "Cluster Sampling") {
       clusters_data <- clusters()
@@ -187,13 +221,14 @@ server <- function(input, output, session) {
         if (!is.null(sampled_clusters$clusters)) {
           for (i in sampled_clusters$clusters) {
             cluster_points <- plot_data_df[clusters_data$cluster == i, ]
-            points(cluster_points$x, cluster_points$y, pch = 21, bg = "red", cex = 1.5)
+            points(cluster_points$x, cluster_points$y, pch = 21, col = "red", cex = 2.5, lwd = 5)
           }
         }
       } else {
-        points(sample_data()$x, sample_data()$y, pch = 21, bg = "red", cex = 1.5)
+        points(sample_data()$x, sample_data()$y, pch = 21, col = "red", cex = 2.5, lwd = 5)
       }
     }
+    
   })
   
   output$cluster_input <- renderUI({
