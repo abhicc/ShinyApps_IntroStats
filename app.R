@@ -22,6 +22,7 @@ library(shiny)
 library(gridExtra)
 
 # User Interface
+# UI section
 ui <- fluidPage(
   titlePanel("Summarizing Numerical Data: Visualizing Mean and Median"),
   # Tab for Fixed Mean and SD
@@ -68,10 +69,15 @@ ui <- fluidPage(
     # Tab for Preloaded Datasets
     tabPanel("Preloaded Dataset",
              fluidRow(
+               column(12, HTML("<br>")), # Add a blank row
+             ),
+             fluidRow(
                column(5,
                       sidebarPanel(
+                        style = "width: 300px;", # Adjust the width here
                         uiOutput("dataset_select"),
-                        uiOutput("variable_select"), width = 10
+                        uiOutput("variable_select"),
+                        downloadButton("download_data", "Download Plot as JPEG")  # Add download button
                       )),
                column(7,
                       uiOutput("data_plot"),
@@ -82,7 +88,7 @@ ui <- fluidPage(
   )
 )
 
-# Server
+# Server section
 server <- function(input, output, session) {
   # Preloaded dataset
   output$dataset_select <- renderUI({
@@ -200,7 +206,65 @@ server <- function(input, output, session) {
     }
   })
   
+  # Download plot as JPEG button handler
+  output$download_data <- downloadHandler(
+    filename = function() {
+      paste("plot_", Sys.Date(), ".jpeg", sep = "")
+    },
+    content = function(file) {
+      if (!is.null(input$var)) {
+        if (!is.null(input$dataset)) {
+          dataset <- switch(input$dataset,
+                            "HappyPlanetIndex" = HappyPlanetIndex,
+                            "USStates" = USStates,
+                            "SleepStudy" = SleepStudy,
+                            "StudentSurvey" = StudentSurvey,
+                            "HomesForSale" = HomesForSale,
+                            "FloridaLakes" = FloridaLakes)
+          data_column <- dataset[[input$var]]
+          if (!is.null(data_column)) { 
+            if (!is.factor(data_column) && is.numeric(data_column) && length(unique(data_column)) > 10) {        
+              p <- ggplot(data = dataset, aes_string(x = input$var)) +
+                geom_histogram(mapping = aes(y = ..density.., fill = "Histogram"), color = "black", bins = 30) +
+                geom_density(color = "black", alpha = 0.5, size = 1.5) +
+                labs(x = "Value", y = "Density", title = "Histogram with Density Plot") +
+                geom_vline(mapping = aes(xintercept = mean(.data[[input$var]]), color = "Mean"), size = 2) +
+                geom_vline(mapping = aes(xintercept = median(.data[[input$var]]), color = "Median"), size = 2) +
+                scale_color_manual("", values = c(Mean = "#D55E00", Median = "#882255")) +
+                scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
+                theme(legend.position = "none")
+              bp <-  ggplot(data = dataset, aes_string(x = input$var)) +
+                geom_boxplot(color = "black", fill = "#56B4E9") +
+                geom_vline(mapping = aes(xintercept = mean(.data[[input$var]]), color = "Mean"), size = 2) +
+                geom_vline(mapping = aes(xintercept = median(.data[[input$var]]), color = "Median"), size = 2) +
+                scale_color_manual("", values = c(Mean = "#D55E00", Median = "#882255")) +
+                scale_fill_manual("", values = c("#56B4E9"), guide = FALSE) +
+                labs(x = "Value", y = " ", title = "Boxplot") +
+                theme(legend.position = "right")
+              p <- p + theme(plot.margin = margin(0, 0, 0, 0, "cm"))
+              bp <- bp + theme(plot.margin = margin(0, 0, 0, 0, "cm"))
+              jpeg(file = file)
+              grid.arrange(p, bp, nrow = 1)
+              dev.off()
+            } else {
+              p <- ggplot(data = dataset, aes_string(x = input$var)) +
+                geom_bar(fill = "#56B4E9") +
+                labs(x = "Category", y = "Frequency", title = "Barplot for Categorical Variable") +
+                theme(axis.text.x = element_text(angle = 45, hjust = 1))
+              jpeg(file = file)
+              print(p)
+              dev.off()
+            }
+          }
+        }
+      }
+    }
+  )
   
+  
+  
+        
+
   # Fixed mean and SD
   set.seed(422024)
   df <- reactive({
@@ -317,5 +381,5 @@ server <- function(input, output, session) {
   
 }
 
-# Run app
+# Run the app
 shinyApp(ui = ui, server = server)
