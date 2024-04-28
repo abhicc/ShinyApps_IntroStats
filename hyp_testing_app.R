@@ -29,7 +29,8 @@ ui <- fluidPage(
     mainPanel(
       h3(textOutput("total_samples_text")),  # Display total number of samples
       plotOutput("histogram"),
-      h4(textOutput("p_hat_text"))  # Display p_hat value
+      h4(textOutput("p_hat_text")),  # Display p_hat value
+      plotOutput("density_plot")  # Display standard normal density plot
     )
   )
 )
@@ -68,9 +69,24 @@ server <- function(input, output, session) {
     
     # Plot histogram using ggplot
     output$histogram <- renderPlot({
-      ggplot(df, aes(x = proportions, fill = ifelse(alternative == "two.sided" & proportions != p_hat, "Below/Above", ifelse(proportions < p_hat & alternative == "not equal to", "Below", ifelse(proportions > p_hat & alternative == "not equal to", "Above", ifelse(proportions <= p_hat & alternative == "less", "Below", ifelse(proportions >= p_hat & alternative == "greater", "Above", "Not Selected"))))))) +
+      ggplot(df, aes(x = proportions, fill = ifelse(alternative == "two.sided" & proportions != p_hat, 
+                                                    "Below/Above", 
+                                                    ifelse(proportions < p_hat & alternative == "not equal to", 
+                                                           "Below", 
+                                                           ifelse(proportions > p_hat & alternative == "not equal to", 
+                                                                  "Above", 
+                                                                  ifelse(proportions <= p_hat & alternative == "less", 
+                                                                         "Below", 
+                                                                         ifelse(proportions >= p_hat & alternative == "greater", 
+                                                                                "Above", 
+                                                                                "Not Selected"))))))) +
         geom_histogram(binwidth = 0.05, color = "black") +
-        scale_fill_manual(values = c("not equal to" = "#009E73", "less than" = "#009E73", "greater than" = "#009E73", "Below" = "#009E73", "Above" = "#009E73", "Below/Above" = "gray"), name = "Alternative Hypothesis") +
+        scale_fill_manual(values = c("not equal to" = "#009E73", 
+                                     "less than" = "#009E73", 
+                                     "greater than" = "#009E73", 
+                                     "Below" = "#009E73", 
+                                     "Above" = "#009E73", 
+                                     "Below/Above" = "gray"), name = "Alternative Hypothesis") +
         geom_vline(xintercept = p_hat, linetype = "dashed", color = "#D55E00", size = 1) +  # Add vertical line at p hat
         labs(title = "Randomization Histogram of Proportions",
              x = "Proportion (p)", y = "Frequency") +
@@ -86,6 +102,15 @@ server <- function(input, output, session) {
     output$p_hat_text <- renderText({
       paste("p_hat =", round(p_hat, 3))
     })
+    
+    # Plot standard normal density plot
+    output$density_plot <- renderPlot({
+      ggplot(data.frame(x = c(-4, 4)), aes(x = x)) +
+        stat_function(fun = dnorm, color = "blue", fill = "lightblue", alpha = 0.5, args = list(mean = 0, sd = 1)) +
+        labs(title = "Standard Normal Density Plot",
+             x = "x", y = "Density") +
+        theme_minimal()
+    })
   })
   
   # Reset samples and histogram
@@ -94,6 +119,7 @@ server <- function(input, output, session) {
     output$histogram <- renderPlot(NULL)
     output$total_samples_text <- renderText("Total Samples: 0")
     output$p_hat_text <- renderText(NULL)
+    output$density_plot <- renderPlot(NULL)
   })
 }
 
