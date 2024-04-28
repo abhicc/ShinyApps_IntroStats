@@ -44,6 +44,7 @@ server <- function(input, output, session) {
     n <- input$sample_size
     p_hat <- input$success_count / n
     
+    # Determine the alternative hypothesis
     alternative <- switch(input$alternative,
                           "not equal to" = "two.sided",
                           "less than" = "less",
@@ -67,8 +68,9 @@ server <- function(input, output, session) {
     
     # Plot histogram using ggplot
     output$histogram <- renderPlot({
-      ggplot(df, aes(x = proportions)) +
-        geom_histogram(binwidth = 0.05, fill = "#009E73", color = "black") +
+      ggplot(df, aes(x = proportions, fill = ifelse(alternative == "two.sided" & proportions != p_hat, "Below/Above", ifelse(proportions < p_hat & alternative == "not equal to", "Below", ifelse(proportions > p_hat & alternative == "not equal to", "Above", ifelse(proportions <= p_hat & alternative == "less", "Below", ifelse(proportions >= p_hat & alternative == "greater", "Above", "Not Selected"))))))) +
+        geom_histogram(binwidth = 0.05, color = "black") +
+        scale_fill_manual(values = c("not equal to" = "#009E73", "less than" = "#009E73", "greater than" = "#009E73", "Below" = "#009E73", "Above" = "#009E73", "Below/Above" = "gray"), name = "Alternative Hypothesis") +
         geom_vline(xintercept = p_hat, linetype = "dashed", color = "#D55E00", size = 1) +  # Add vertical line at p hat
         labs(title = "Randomization Histogram of Proportions",
              x = "Proportion (p)", y = "Frequency") +
