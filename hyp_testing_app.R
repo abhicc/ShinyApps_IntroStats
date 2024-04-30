@@ -102,7 +102,7 @@ server <- function(input, output, session) {
     output$p_hat_text <- renderText({
       paste("p_hat =", round(p_hat, 3))
     })
-    
+
     # Plot standard normal density plot
     output$density_plot <- renderPlot({
       ggplot(data.frame(x = c(-4, 4)), aes(x = x)) +
