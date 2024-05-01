@@ -6,6 +6,7 @@
 # equal to the hypothesized population proportion (i.e., the value in the null hypothesis).
 # The sample proportion in each randomization sample is recorded on the randomization histogram.  
 ##########################################################################################################
+
 library(shiny)
 library(ggplot2)
 
@@ -131,7 +132,7 @@ server <- function(input, output, session) {
       ggplot(df_density, aes(x = x)) +
         geom_line(aes(y = density), color = "black") +
         geom_area(aes(y = density), fill = "#009E73", alpha = 0.5) +
-        geom_vline(xintercept = test_statistic, linetype = "dashed", color = "red") +  # Add vertical line at test statistic
+        geom_vline(xintercept = test_statistic, linetype = "dashed", color = "#D55E00") +  # Add vertical line at test statistic
         labs(title = "Standard Normal Density Plot (Less Than)",
              x = "x", y = "Density") +
         theme_minimal()
@@ -155,7 +156,7 @@ server <- function(input, output, session) {
       ggplot(df_density, aes(x = x)) +
         geom_line(aes(y = density), color = "black") +
         geom_area(aes(y = density), fill = "#009E73", alpha = 0.5) +
-        geom_vline(xintercept = test_statistic, linetype = "dashed", color = "red") +  # Add vertical line at test statistic
+        geom_vline(xintercept = test_statistic, linetype = "dashed", color = "#D55E00") +  # Add vertical line at test statistic
         labs(title = "Standard Normal Density Plot (Greater Than)",
              x = "x", y = "Density") +
         theme_minimal()
@@ -179,7 +180,7 @@ server <- function(input, output, session) {
       ggplot(df_density, aes(x = x)) +
         geom_line(aes(y = density), color = "black") +
         geom_area(aes(y = density), fill = "#009E73", alpha = 0.5) +
-        geom_vline(xintercept = test_statistic, linetype = "dashed", color = "red") +  # Add vertical line at test statistic
+        geom_vline(xintercept = test_statistic, linetype = "dashed", color = "#D55E00") +  # Add vertical line at test statistic
         labs(title = "Standard Normal Density Plot (Not Equal To)",
              x = "x", y = "Density") +
         theme_minimal()
