@@ -6,7 +6,6 @@
 # equal to the hypothesized population proportion (i.e., the value in the null hypothesis).
 # The sample proportion in each randomization sample is recorded on the randomization histogram.  
 ##########################################################################################################
-
 library(shiny)
 library(ggplot2)
 
@@ -23,7 +22,8 @@ ui <- fluidPage(
       selectInput("alternative", "Alternative Hypothesis:",
                   choices = c("not equal to", "less than", "greater than")),
       actionButton("generate_samples", "Generate 1000 Samples"),
-      actionButton("reset_samples", "Reset Plot")
+      actionButton("reset_samples", "Reset Plot"),
+      checkboxInput("show_density_plot", "Show Density Plot", value = FALSE)  # Checkbox to show/hide density plot
     ),
     
     mainPanel(
@@ -111,79 +111,91 @@ server <- function(input, output, session) {
     
     # Display p_hat value
     output$p_hat_text <- renderText({
-      paste("p_hat =", round(p_hat, 3))
+      paste("Sample Proportion (p̂) =", round(p_hat, 3))
     })
     
     # Plot standard normal density plot for less than
     output$density_plot_less_than <- renderPlot({
-      # Calculate the test statistic
-      test_statistic <- (p_hat - input$null_value) / sqrt(input$null_value * (1 - input$null_value) / n)
-      
-      # Generate x values for density plot
-      x_values <- seq(-4, test_statistic, by = 0.01)
-      
-      # Calculate density values
-      density_values <- dnorm(x_values)
-      
-      # Combine x and density values into a data frame
-      df_density <- data.frame(x = x_values, density = density_values)
-      
-      # Plot the density plot for less than
-      ggplot(df_density, aes(x = x)) +
-        geom_line(aes(y = density), color = "black") +
-        geom_area(aes(y = density), fill = "#009E73", alpha = 0.5) +
-        geom_vline(xintercept = test_statistic, linetype = "dashed", color = "#D55E00") +  # Add vertical line at test statistic
-        labs(title = "Standard Normal Density Plot (Less Than)",
-             x = "x", y = "Density") +
-        theme_minimal()
+      if (input$show_density_plot) {
+        # Calculate the test statistic
+        test_statistic <- (p_hat - input$null_value) / sqrt(input$null_value * (1 - input$null_value) / n)
+        
+        # Generate x values for density plot
+        x_values <- seq(-4, test_statistic, by = 0.01)
+        
+        # Calculate density values
+        density_values <- dnorm(x_values)
+        
+        # Combine x and density values into a data frame
+        df_density <- data.frame(x = x_values, density = density_values)
+        
+        # Plot the density plot for less than
+        ggplot(df_density, aes(x = x)) +
+          geom_line(aes(y = density), color = "black") +
+          geom_area(aes(y = density), fill = "#009E73", alpha = 0.5) +
+          geom_vline(xintercept = test_statistic, linetype = "dashed", color = "#D55E00") +  # Add vertical line at test statistic
+          labs(title = "Standard Normal Density Plot (Less Than)",
+               x = "x", y = "Density") +
+          theme_minimal()
+      } else {
+        NULL  # Return NULL if density plot is not to be shown
+      }
     })
     
     # Plot standard normal density plot for greater than
     output$density_plot_greater_than <- renderPlot({
-      # Calculate the test statistic
-      test_statistic <- (p_hat - input$null_value) / sqrt(input$null_value * (1 - input$null_value) / n)
-      
-      # Generate x values for density plot
-      x_values <- seq(test_statistic, 4, by = 0.01)
-      
-      # Calculate density values
-      density_values <- dnorm(x_values)
-      
-      # Combine x and density values into a data frame
-      df_density <- data.frame(x = x_values, density = density_values)
-      
-      # Plot the density plot for greater than
-      ggplot(df_density, aes(x = x)) +
-        geom_line(aes(y = density), color = "black") +
-        geom_area(aes(y = density), fill = "#009E73", alpha = 0.5) +
-        geom_vline(xintercept = test_statistic, linetype = "dashed", color = "#D55E00") +  # Add vertical line at test statistic
-        labs(title = "Standard Normal Density Plot (Greater Than)",
-             x = "x", y = "Density") +
-        theme_minimal()
+      if (input$show_density_plot) {
+        # Calculate the test statistic
+        test_statistic <- (p_hat - input$null_value) / sqrt(input$null_value * (1 - input$null_value) / n)
+        
+        # Generate x values for density plot
+        x_values <- seq(test_statistic, 4, by = 0.01)
+        
+        # Calculate density values
+        density_values <- dnorm(x_values)
+        
+        # Combine x and density values into a data frame
+        df_density <- data.frame(x = x_values, density = density_values)
+        
+        # Plot the density plot for greater than
+        ggplot(df_density, aes(x = x)) +
+          geom_line(aes(y = density), color = "black") +
+          geom_area(aes(y = density), fill = "#009E73", alpha = 0.5) +
+          geom_vline(xintercept = test_statistic, linetype = "dashed", color = "#D55E00") +  # Add vertical line at test statistic
+          labs(title = "Standard Normal Density Plot (Greater Than)",
+               x = "x", y = "Density") +
+          theme_minimal()
+      } else {
+        NULL  # Return NULL if density plot is not to be shown
+      }
     })
     
     # Plot standard normal density plot for not equal to
     output$density_plot_not_equal_to <- renderPlot({
-      # Calculate the test statistic
-      test_statistic <- (p_hat - input$null_value) / sqrt(input$null_value * (1 - input$null_value) / n)
-      
-      # Generate x values for density plot
-      x_values <- seq(-4, 4, by = 0.01)
-      
-      # Calculate density values
-      density_values <- dnorm(x_values)
-      
-      # Combine x and density values into a data frame
-      df_density <- data.frame(x = x_values, density = density_values)
-      
-      # Plot the density plot for not equal to
-      ggplot(df_density, aes(x = x)) +
-        geom_line(aes(y = density), color = "black") +
-        geom_area(aes(y = density), fill = "#009E73", alpha = 0.5) +
-        geom_vline(xintercept = test_statistic, linetype = "dashed", color = "#D55E00") +  # Add vertical line at test statistic
-        labs(title = "Standard Normal Density Plot (Not Equal To)",
-             x = "x", y = "Density") +
-        theme_minimal()
+      if (input$show_density_plot) {
+        # Calculate the test statistic
+        test_statistic <- (p_hat - input$null_value) / sqrt(input$null_value * (1 - input$null_value) / n)
+        
+        # Generate x values for density plot
+        x_values <- seq(-4, 4, by = 0.01)
+        
+        # Calculate density values
+        density_values <- dnorm(x_values)
+        
+        # Combine x and density values into a data frame
+        df_density <- data.frame(x = x_values, density = density_values)
+        
+        # Plot the density plot for not equal to
+        ggplot(df_density, aes(x = x)) +
+          geom_line(aes(y = density), color = "black") +
+          geom_area(aes(y = density), fill = "#009E73", alpha = 0.5) +
+          geom_vline(xintercept = test_statistic, linetype = "dashed", color = "#D55E00") +  # Add vertical line at test statistic
+          labs(title = "Standard Normal Density Plot (Not Equal To)",
+               x = "x", y = "Density") +
+          theme_minimal()
+      } else {
+        NULL  # Return NULL if density plot is not to be shown
+      }
     })
   })
   
