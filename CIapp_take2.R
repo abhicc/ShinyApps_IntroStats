@@ -1,4 +1,3 @@
-
 library(tidyverse)
 library(plotly)
 library(shiny)
@@ -39,15 +38,16 @@ ui <- fluidPage(
   )
 )
 
-# Define server logic
+
+
 # Define server logic
 server <- function(input, output) {
   
   # Initialize ci_data for storing confidence interval data
   ci_data <- reactiveValues()
   
-  # Initialize selected intervals
-  selected_intervals <- reactiveVal(NULL)
+  # Initialize selected data
+  selected_data <- reactiveVal(NULL)
   
   # Generate and store ci_data for mean simulation
   observeEvent(input$num_intervals, {
@@ -98,8 +98,7 @@ server <- function(input, output) {
       theme(axis.text.y = element_blank(),  # Hide y-axis text
             axis.title.y = element_blank()) # Hide y-axis label
     
-    ggplotly(gg) %>%
-      event_register("plotly_selected")
+    ggplotly(gg)
   })
   
   # Render the plot for proportion simulation
@@ -123,22 +122,19 @@ server <- function(input, output) {
       event_register("plotly_selected")
   })
   
-  # Calculate number of intervals containing the parameter
-  observe({
-    if (!is.null(event_data("plotly_selected"))) {
-      selected_data <- event_data("plotly_selected")
-      print(selected_data)
-      selected_intervals(do.call(rbind, selected_data))
-    }
+  # Capture selected data for proportion plot only
+  observeEvent(input$conf_plot_prop_selected, {
+    # Get the selected data
+    selected_data(event_data(event = "plotly_selected", source = "conf_plot_prop"))
   })
   
   # Calculate number of intervals containing the parameter
   output$intervals_containing_param_prop <- renderText({
-    if (is.null(selected_intervals())) {
+    if (is.null(selected_data())) {
       "Select intervals on the plot to calculate."
     } else {
-      total_intervals <- nrow(selected_intervals())
-      true_intervals <- sum(selected_intervals()$contains_prop)
+      total_intervals <- nrow(selected_data())
+      true_intervals <- sum(selected_data()$contains_prop)
       paste("Number of Intervals Containing Parameter:", true_intervals, "/", total_intervals)
     }
   })
@@ -146,9 +142,4 @@ server <- function(input, output) {
 
 # Run the application
 shinyApp(ui = ui, server = server)
-
-
-
-
-
 
