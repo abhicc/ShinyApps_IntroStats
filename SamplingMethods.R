@@ -1,7 +1,7 @@
 library(tidyverse)
 library(shiny)
 
-# Generate random coordinates within the rectangle
+# Use uniform distribution to randomly generate points in the rectangle
 plot_data <- reactive({
   num_points <- 100
   x <- runif(num_points, min = -4.8, max = 4.8)
@@ -11,13 +11,12 @@ plot_data <- reactive({
 
 cluster_colors <- c("blue", "green", "red", "orange", "purple", "yellow", "cyan", "magenta", "brown", "grey")
 
-# Initialize clusters within a reactive expression
+# To avoid errors
 clusters <- reactiveVal(NULL)
 
+# Cluster Data
 observe({
-  # Call kmeans inside the observer to ensure it's executed reactively
   clusters_data <- kmeans(plot_data(), centers = 3)
-  # Update the reactive value with the result
   clusters(clusters_data)
 })
 
@@ -54,48 +53,44 @@ server <- function(input, output, session) {
     plot_data_df <- plot_data()
     
     if (input$sample_type == "Cluster Sampling") {
-      # Perform k-means clustering
+    
       clusters_data <- clusters()
       
-      # Sample the specified number of clusters
+      # Sample the correct # of clusters
       sampled_clusters$clusters <- sample(unique(clusters_data$cluster), as.numeric(input$num_clusters))
       
-      # Initialize a dataframe to store sampled points
+      # Dataframe for storage
       sample_data_df <- data.frame(x = numeric(0), y = numeric(0), cluster = integer(0))
       
-      # Calculate the total number of points to sample
+      # Total sampled points = sample size input
       total_points_to_sample <- input$sample_size
       
-      # Loop through all clusters and add their points to the sample dataframe
+      # Loop through all clusters and add their points to the sampled dataframe
       for (i in unique(clusters_data$cluster)) {
         cluster_points <- plot_data_df[clusters_data$cluster == i, ]
-        # Sample points from the current cluster with replacement until we reach the desired number of sampled points
         cluster_sampled <- cluster_points %>%
           sample_n(total_points_to_sample, replace = TRUE)
         sample_data_df <- bind_rows(sample_data_df, cluster_sampled)
       }
       
-      # Add a flag to indicate sampled points
+      # Flag as sampled
       sample_data_df <- sample_data_df %>%
         mutate(sampled = TRUE)
       
-      # Update the reactive value with sampled data
+      # Update sampled data
       sample_data(sample_data_df)
     }  else if (input$sample_type == "Stratified Sampling") {
       clusters_data <- clusters()
       
       plot_data_df$cluster <- clusters_data$cluster
       
-      # Print number of points in each cluster before filtering
-      print(table(clusters_data$cluster))
-      
-      # Calculate the number of base samples per cluster
+      # Base samples
       sample_size_per_cluster <- floor(input$sample_size / 3)
       
-      # Calculate remainder
+      # Remainder
       remainder <- input$sample_size %% 3
       
-      # Sample base points from each data frame
+      # Sample base points from their own dataframes
       sampled_cluster1 <- plot_data_df %>% 
         filter(cluster == 1) %>%
         sample_n(sample_size_per_cluster + ifelse(remainder >= 1, 1, 0), replace = FALSE)
@@ -108,17 +103,17 @@ server <- function(input, output, session) {
       
       sample_data_df <- bind_rows(sampled_cluster1, sampled_cluster2, sampled_cluster3)
       
-      # Add a flag to indicate sampled points for each cluster
+      # Flag as sampled
       sample_data_df <- sample_data_df %>%
         mutate(sampled = TRUE)
       
-      # Update the reactive value with sampled data
+      # Update sampled data
       sample_data(sample_data_df)
-    } else {
+    } else { # Simple random sampling
       sample_data_df <- plot_data_df %>%
         sample_n(input$sample_size, replace = FALSE)
       
-      # Update the reactive value with sampled data
+      
       sample_data(sample_data_df)
     }
   })
@@ -133,10 +128,10 @@ server <- function(input, output, session) {
       clusters_data <- clusters()
       
       if (!is.null(clusters_data)) { 
-        # Determine the number of clusters
+        # Number of clusters
         num_clusters <- length(unique(clusters_data$cluster))
         
-        # Define the number of colors per cluster
+        # Number of colors per cluster
         colors_per_cluster <- 5
         
         # Calculate total colors needed
@@ -145,7 +140,7 @@ server <- function(input, output, session) {
         # Repeat the cluster colors to match the required number of colors
         cluster_colors_cycle <- rep(cluster_colors, ceiling(total_colors / length(cluster_colors)))
         
-        # Plot points with colors based on their cluster membership
+        # Plot points such that colored by cluster membership 
         for (i in unique(clusters_data$cluster)) {
           cluster_points <- plot_data_df[clusters_data$cluster == i, ]
           num_points_in_cluster <- nrow(cluster_points)
@@ -153,7 +148,7 @@ server <- function(input, output, session) {
           points(cluster_points$x, cluster_points$y, col = colors, pch = 16)
         }
         
-        # Add dashed lines connecting points within each cluster
+        # Dashed lines to connect clusters
         for (i in unique(clusters_data$cluster)) {
           cluster_points <- plot_data_df[clusters_data$cluster == i, ]
           hull <- chull(cluster_points$x, cluster_points$y)
@@ -175,13 +170,12 @@ server <- function(input, output, session) {
           points(cluster_points$x, cluster_points$y, col = cluster_colors[i], pch = 16)
         }
         
-        # Duplicate clusters for coloring
+      
         duplicate_clusters <- clusters_data$cluster + max(clusters_data$cluster)
         
-        # Plot duplicate clusters
         points(plot_data_df$x, plot_data_df$y, col = duplicate_clusters, pch = 16)
         
-        # Add dashed lines connecting points within each cluster
+        # Dashed lines to connect clusters
         for (i in 1:max(clusters_data$cluster)) {
           cluster_points <- plot_data_df[clusters_data$cluster == i, ]
           hull <- chull(cluster_points$x, cluster_points$y)
@@ -194,7 +188,7 @@ server <- function(input, output, session) {
       points(plot_data_df$x, plot_data_df$y, pch = 16, col = "black")
     }
     
-    # Add highlighting if sampling has been performed
+    # Add highlighting if sampled
     if (!is.null(sample_data())) {
       if (input$sample_type == "Cluster Sampling") {
         if (!is.null(sampled_clusters$clusters)) {
@@ -219,7 +213,7 @@ server <- function(input, output, session) {
     }
   })
   
-  # Clear sample_data reactive value when sample type changes or sample button is clicked
+  # To avoid errors
   observeEvent(input$sample_type, {
     req(input$sample_btn)
     if (!is.null(sample_data()) && !is.null(input$sample_type)) {

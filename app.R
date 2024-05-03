@@ -12,6 +12,13 @@ SleepStudy <- read.csv("SleepStudy.csv", row.names = 1)
 StudentSurvey <- read.csv("StudentSurvey.csv", row.names = 1)
 USStates <- read.csv("USStates1e.csv", row.names = 1)
 HomesForSale <- read.csv("HomesForSale.csv", row.names = 1)
+HappyPlanetIndex <- HappyPlanetIndex[complete.cases(HappyPlanetIndex), ]
+FloridaLakes <- FloridaLakes[complete.cases(FloridaLakes), ]
+SleepStudy <- SleepStudy[complete.cases(SleepStudy), ]
+StudentSurvey <- StudentSurvey[complete.cases(StudentSurvey), ]
+USStates <- USStates[complete.cases(USStates), ]
+HomesForSale <- HomesForSale[complete.cases(HomesForSale), ]
+
 
 library(sn)
 library(tidyverse)
@@ -22,7 +29,6 @@ library(shiny)
 library(gridExtra)
 
 # User Interface
-# UI section
 ui <- fluidPage(
   titlePanel("Summarizing Numerical Data: Visualizing Mean and Median"),
   # Tab for Fixed Mean and SD
@@ -159,7 +165,7 @@ server <- function(input, output, session) {
     }
   })
   
-  # Plot for preuploaded dataset tab
+  # Plot for preloaded dataset tab
   output$dataset_plot <- renderPlot({
     req(input$var)
     dataset <- switch(input$dataset,
@@ -206,7 +212,7 @@ server <- function(input, output, session) {
     }
   })
   
-  # Download plot as JPEG button handler
+  # Download plot
   output$download_data <- downloadHandler(
     filename = function() {
       paste("plot_", Sys.Date(), ".jpeg", sep = "")
