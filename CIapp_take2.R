@@ -18,10 +18,11 @@ ui <- fluidPage(
                  numericInput("num_intervals", "Number of intervals:", value = 10, min = 1),
                  selectInput("confidence", "Confidence level:",
                              choices = c("95%" = 0.95, "90%" = 0.90, "99%" = 0.99)),
-                 textOutput("intervals_containing_mu") # Display number of intervals containing the parameter and percentage
+                 textOutput("intervals_containing_mu"), # Display number of intervals containing the parameter and percentage
+                 textOutput("green_lines_count_mean") # Display the count of green lines
                ),
                mainPanel(
-                 plotlyOutput("conf_plot") # Plotly plot for displaying confidence intervals for mean
+                 plotlyOutput("conf_plot_mean") # Plotly plot for displaying confidence intervals for mean
                )
              )),
     tabPanel("Proportion", value = "proportion",
@@ -32,7 +33,8 @@ ui <- fluidPage(
                  numericInput("num_intervals_prop", "Number of intervals:", value = 10, min = 1),
                  selectInput("confidence_prop", "Confidence level:",
                              choices = c("95%" = 0.95, "90%" = 0.90, "99%" = 0.99)),
-                 textOutput("intervals_containing_param_prop") # Display number of intervals containing the parameter and percentage
+                 textOutput("intervals_containing_param_prop"), # Display number of intervals containing the parameter and percentage
+                 textOutput("green_lines_count_prop") # Display the count of green lines
                ),
                mainPanel(
                  plotlyOutput("conf_plot_prop") # Plotly plot for displaying confidence intervals for proportion
@@ -41,9 +43,8 @@ ui <- fluidPage(
   )
 )
 
-
-
-server <- function(input, output) {
+# Define server logic
+server <- function(input, output, session) {
   
   # Reactive expression for calculating number of intervals containing μ
   intervals_containing_mu <- reactiveVal(0)
@@ -78,11 +79,62 @@ server <- function(input, output) {
   })
   
   # Display number of intervals containing μ and percentage
-  output$intervals_containing_mu <- renderText({
-    total_intervals <- input$num_intervals
-    intervals_with_mu <- intervals_containing_mu()
-    percentage <- round(intervals_with_mu / total_intervals * 100, 2)
-    paste("Number of intervals containing μ:", intervals_with_mu, "/", total_intervals, "=", percentage, "%")
+  # output$intervals_containing_mu <- renderText({
+  #   total_intervals <- input$num_intervals
+  #   intervals_with_mu <- intervals_containing_mu()
+  #   percentage <- round(intervals_with_mu / total_intervals * 100, 2)
+  #   paste("Number of intervals containing μ:", intervals_with_mu, "/", total_intervals, "=", percentage, "%")
+  # })
+  
+  # Render the plot for mean simulation
+  output$conf_plot_mean <- renderPlotly({
+    # Generate data for specified number of intervals
+    sample_data_mean <- lapply(1:input$num_intervals, function(i) {
+      data.frame(y = i, x = rnorm(input$sample_size, mean = input$pop_mean, sd = input$pop_sd)) # Normal distribution for mean
+    })
+    
+    # Calculate confidence intervals for each sample
+    ci_data <- lapply(sample_data_mean, function(data) {
+      ci <- qnorm((1 - as.numeric(input$confidence)) / 2, mean = 0, sd = 1)
+      lower_bound <- mean(data$x) - ci * (input$pop_sd / sqrt(input$sample_size)) # Standard deviation of the normal distribution is 1
+      upper_bound <- mean(data$x) + ci * (input$pop_sd / sqrt(input$sample_size))
+      contains_mean <- ifelse(input$pop_mean >= min(lower_bound, upper_bound) && input$pop_mean <= max(lower_bound, upper_bound), "TRUE", "FALSE")
+      data.frame(y = data$y, x = mean(data$x), xmin = lower_bound, xmax = upper_bound, contains_mean = contains_mean)
+    })
+    
+    # Count the number of green lines
+    num_green_lines <- sum(sapply(ci_data, function(ci) {
+      if (ci$contains_mean[1] == "TRUE") {
+        1
+      } else {
+        0
+      }
+    }))
+    
+    # Create plot for mean simulation
+    gg <- ggplot() +
+      geom_vline(xintercept = input$pop_mean, linetype = "dashed", color = "#D55E00") +
+      geom_errorbarh(data = do.call(rbind, ci_data), 
+                     mapping = aes(y = y, xmin = xmax, xmax = xmin, color = contains_mean), 
+                     height = 0.2) +
+      geom_point(data = do.call(rbind, ci_data), 
+                 mapping = aes(y = y, x = x, color = contains_mean, text = paste("Lower bound:", round(xmax, 2), "<br>Upper bound:", round(xmin, 2)))) +
+      scale_color_manual(values = c("TRUE" = "#009E73", "FALSE" = "#882255"), guide = FALSE, labels = c("TRUE" = "Contains Parameter", "FALSE" = "Doesn't Contain Parameter")) +
+      labs(title = "Confidence Intervals",
+           x = "Mean",
+           y = "Interval") +
+      theme_minimal() +
+      theme(axis.text.y = element_blank(),  # Hide y-axis text
+            axis.title.y = element_blank()) # Hide y-axis label
+    
+  
+    output$green_lines_count_mean <- renderText({
+      percentage <- round(num_green_lines / input$num_intervals_prop * 100, 2)
+      paste("Number of Inervals Containing Parameter",  num_green_lines, "/", input$num_intervals_prop, "=", percentage, "%")
+    })
+    
+    
+    ggplotly(gg) # Convert ggplot2 figure into an interactive plotly plot
   })
   
   # Reactive expression for calculating number of intervals containing the parameter (proportion)
@@ -119,47 +171,12 @@ server <- function(input, output) {
   })
   
   # Display number of intervals containing the parameter and percentage for proportion
-  output$intervals_containing_param_prop <- renderText({
-    total_intervals <- input$num_intervals_prop
-    intervals_with_param <- intervals_containing_param_prop()
-    percentage <- round(intervals_with_param / total_intervals * 100, 2)
-    paste("Number of intervals containing π:", intervals_with_param, "/", total_intervals, "=", percentage, "%")
-  })
-  
-  # Render the plot for mean simulation
-  output$conf_plot <- renderPlotly({
-    # Generate data for specified number of intervals
-    sample_data_mean <- lapply(1:input$num_intervals, function(i) {
-      data.frame(y = i, x = rnorm(input$sample_size, mean = input$pop_mean, sd = input$pop_sd)) # Normal distribution for mean
-    })
-    
-    # Calculate confidence intervals for each sample
-    ci_data <- lapply(sample_data_mean, function(data) {
-      ci <- qnorm((1 - as.numeric(input$confidence)) / 2, mean = 0, sd = 1)
-      lower_bound <- mean(data$x) - ci * (input$pop_sd / sqrt(input$sample_size)) # Standard deviation of the normal distribution is 1
-      upper_bound <- mean(data$x) + ci * (input$pop_sd / sqrt(input$sample_size))
-      contains_mean <- ifelse(input$pop_mean >= min(lower_bound, upper_bound) && input$pop_mean <= max(lower_bound, upper_bound), "TRUE", "FALSE")
-      data.frame(y = data$y, x = mean(data$x), xmin = lower_bound, xmax = upper_bound, contains_mean = contains_mean)
-    })
-    
-    # Create plot for mean simulation
-    gg <- ggplot() +
-      geom_vline(xintercept = input$pop_mean, linetype = "dashed", color = "#D55E00") +
-      geom_errorbarh(data = do.call(rbind, ci_data), 
-                     mapping = aes(y = y, xmin = xmax, xmax = xmin, color = contains_mean), 
-                     height = 0.2) +
-      geom_point(data = do.call(rbind, ci_data), 
-                 mapping = aes(y = y, x = x, color = contains_mean, text = paste("Lower bound:", round(xmax, 2), "<br>Upper bound:", round(xmin, 2)))) +
-      scale_color_manual(values = c("TRUE" = "#009E73", "FALSE" = "#882255"), guide = FALSE, labels = c("TRUE" = "Contains Parameter", "FALSE" = "Doesn't Contain Parameter")) +
-      labs(title = "Confidence Intervals",
-           x = "Mean",
-           y = "Interval") +
-      theme_minimal() +
-      theme(axis.text.y = element_blank(),  # Hide y-axis text
-            axis.title.y = element_blank()) # Hide y-axis label
-    
-    ggplotly(gg) # Convert ggplot2 figure into an interactive plotly plot
-  })
+  # output$intervals_containing_param_prop <- renderText({
+  #   total_intervals <- input$num_intervals_prop
+  #   intervals_with_param <- intervals_containing_param_prop()
+  #   percentage <- round(intervals_with_param / total_intervals * 100, 2)
+  #   paste("Number of intervals containing π:", intervals_with_param, "/", total_intervals, "=", percentage, "%")
+  # })
   
   # Render the plot for proportion simulation
   output$conf_plot_prop <- renderPlotly({
@@ -179,6 +196,15 @@ server <- function(input, output) {
       data.frame(y = data$y, x = p_hat, xmin = lower_bound, xmax = upper_bound, contains_prop = contains_prop, text = paste("Lower bound:", round(lower_bound, 2), "<br>Upper bound:", round(upper_bound, 2)))
     })
     
+    # Count the number of green lines
+    num_green_lines <- sum(sapply(ci_data, function(ci) {
+      if (ci$contains_prop[1] == "TRUE") {
+        1
+      } else {
+        0
+      }
+    }))
+    
     # Create plot for proportion simulation
     gg <- ggplot() +
       geom_vline(xintercept = input$pop_prop, linetype = "dashed", color = "#D55E00") +
@@ -195,8 +221,15 @@ server <- function(input, output) {
       theme(axis.text.y = element_blank(),  # Hide y-axis text
             axis.title.y = element_blank()) # Hide y-axis label
     
+    # Update the count of green lines
+    output$green_lines_count_prop <- renderText({
+      percentage <- round(num_green_lines / input$num_intervals_prop * 100, 2)
+      paste("Number of Inervals Containing Parameter",  num_green_lines, "/", input$num_intervals_prop, "=", percentage, "%")
+    })
+    
     ggplotly(gg) # Convert ggplot2 figure into an interactive plotly plot
   })
 }
 
+# Run the application
 shinyApp(ui = ui, server = server)
