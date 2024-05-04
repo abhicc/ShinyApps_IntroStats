@@ -1,6 +1,5 @@
 
 
-
 library(tidyverse)
 library(plotly)
 library(shiny)
@@ -15,8 +14,8 @@ ui <- fluidPage(
                  numericInput("pop_mean", "Population mean (μ):", value = 0.5, min = 0, max = 1, step = 0.1),
                  numericInput("pop_sd", "Population SD (σ):", value = 10),
                  numericInput("sample_size", "Sample size (n):", value = 50, min = 1),
-                 numericInput("num_intervals", "Number of intervals:", value = 10, min = 1),
-                 selectInput("confidence", "Confidence level:",
+                 numericInput("num_intervals_mean", "Number of intervals:", value = 10, min = 1),
+                 selectInput("confidence_mean", "Confidence level:",
                              choices = c("95%" = 0.95, "90%" = 0.90, "99%" = 0.99)),
                  textOutput("intervals_containing_mu"), # Display number of intervals containing the parameter and percentage
                  textOutput("green_lines_count_mean") # Display the count of green lines
@@ -53,13 +52,13 @@ server <- function(input, output, session) {
   observe({
     # Generate data
     set.seed(123) # for reproducibility
-    sample_data_mean <- lapply(1:input$num_intervals, function(i) {
+    sample_data_mean <- lapply(1:input$num_intervals_mean, function(i) {
       data.frame(y = i, x = rnorm(input$sample_size, mean = input$pop_mean, sd = input$pop_sd)) # normal distribution!
     })
     
     # Calculate confidence intervals for each sample
     ci_data <- lapply(sample_data_mean, function(data) {
-      ci <- qnorm((1 - as.numeric(input$confidence)) / 2, mean = 0, sd = 1)
+      ci <- qnorm((1 - as.numeric(input$confidence_mean)) / 2, mean = 0, sd = 1)
       lower_bound <- mean(data$x) - ci * (input$pop_sd / sqrt(input$sample_size))
       upper_bound <- mean(data$x) + ci * (input$pop_sd / sqrt(input$sample_size))
       contains_mean <- input$pop_mean >= min(lower_bound, upper_bound) && input$pop_mean <= max(lower_bound, upper_bound)
@@ -80,22 +79,22 @@ server <- function(input, output, session) {
   
   # Display number of intervals containing μ and percentage
   # output$intervals_containing_mu <- renderText({
-  #   total_intervals <- input$num_intervals
+  #   total_intervals <- input$num_intervals_mean
   #   intervals_with_mu <- intervals_containing_mu()
   #   percentage <- round(intervals_with_mu / total_intervals * 100, 2)
   #   paste("Number of intervals containing μ:", intervals_with_mu, "/", total_intervals, "=", percentage, "%")
   # })
-  
+  # 
   # Render the plot for mean simulation
   output$conf_plot_mean <- renderPlotly({
     # Generate data for specified number of intervals
-    sample_data_mean <- lapply(1:input$num_intervals, function(i) {
+    sample_data_mean <- lapply(1:input$num_intervals_mean, function(i) {
       data.frame(y = i, x = rnorm(input$sample_size, mean = input$pop_mean, sd = input$pop_sd)) # Normal distribution for mean
     })
     
     # Calculate confidence intervals for each sample
     ci_data <- lapply(sample_data_mean, function(data) {
-      ci <- qnorm((1 - as.numeric(input$confidence)) / 2, mean = 0, sd = 1)
+      ci <- qnorm((1 - as.numeric(input$confidence_mean)) / 2, mean = 0, sd = 1)
       lower_bound <- mean(data$x) - ci * (input$pop_sd / sqrt(input$sample_size)) # Standard deviation of the normal distribution is 1
       upper_bound <- mean(data$x) + ci * (input$pop_sd / sqrt(input$sample_size))
       contains_mean <- ifelse(input$pop_mean >= min(lower_bound, upper_bound) && input$pop_mean <= max(lower_bound, upper_bound), "TRUE", "FALSE")
@@ -127,12 +126,10 @@ server <- function(input, output, session) {
       theme(axis.text.y = element_blank(),  # Hide y-axis text
             axis.title.y = element_blank()) # Hide y-axis label
     
-  
     output$green_lines_count_mean <- renderText({
       percentage <- round(num_green_lines / input$num_intervals_prop * 100, 2)
       paste("Number of Inervals Containing Parameter",  num_green_lines, "/", input$num_intervals_prop, "=", percentage, "%")
     })
-    
     
     ggplotly(gg) # Convert ggplot2 figure into an interactive plotly plot
   })
