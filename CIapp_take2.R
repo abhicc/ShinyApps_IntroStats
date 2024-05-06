@@ -125,8 +125,8 @@ server <- function(input, output, session) {
             axis.title.y = element_blank()) # Hide y-axis label
     
     output$green_lines_count_mean <- renderText({
-      percentage <- round(num_green_lines / input$num_intervals_prop * 100, 2)
-      paste("Number of Inervals Containing Parameter",  num_green_lines, "/", input$num_intervals_prop, "=", percentage, "%")
+      percentage <- round(num_green_lines / input$num_intervals_mean * 100, 2)
+      paste("Number of Inervals Containing Parameter",  num_green_lines, "/", input$num_intervals_mean, "=", percentage, "%")
     })
     
     ggplotly(gg) # Convert ggplot2 figure into an interactive plotly plot
