@@ -30,6 +30,7 @@ ui <- fluidPage(
       h3(textOutput("total_samples_text")),  # Display total number of samples
       plotOutput("histogram"),
       h4(textOutput("p_hat_text")),  # Display p_hat value
+      h4(textOutput("samples_out_of_1000_text")),  # Display count of samples out of 1000
       conditionalPanel(
         condition = "input.alternative == 'less than'",
         plotOutput("density_plot_less_than")  # Display density plot for less than
@@ -75,6 +76,15 @@ server <- function(input, output, session) {
     # Calculate proportions for each sample
     proportions <- samples / n
     
+    # Count of samples based on alternative hypothesis
+    if (alternative == "less") {
+      samples_out_of_1000 <- sum(proportions < p_hat)
+    } else if (alternative == "greater") {
+      samples_out_of_1000 <- sum(proportions > p_hat)
+    } else {
+      samples_out_of_1000 <- sum(abs(proportions - p_hat) > abs(input$null_value - p_hat))
+    }
+    
     # Convert proportions to data frame for ggplot
     df <- data.frame(proportions)
     
@@ -111,7 +121,12 @@ server <- function(input, output, session) {
     
     # Display p_hat value
     output$p_hat_text <- renderText({
-      paste("Sample Proportion (p̂) =", round(p_hat, 3))
+      paste("Sample proportion (p̂) =", round(p_hat, 3))
+    })
+    
+    # Display count of samples out of 1000
+    output$samples_out_of_1000_text <- renderText({
+      paste("Samples out of 1000:", samples_out_of_1000)
     })
     
     # Plot standard normal density plot for less than
@@ -205,6 +220,7 @@ server <- function(input, output, session) {
     output$histogram <- renderPlot(NULL)
     output$total_samples_text <- renderText("Total Samples: 0")
     output$p_hat_text <- renderText(NULL)
+    output$samples_out_of_1000_text <- renderText(NULL)
     output$density_plot_less_than <- renderPlot(NULL)
     output$density_plot_greater_than <- renderPlot(NULL)
     output$density_plot_not_equal_to <- renderPlot(NULL)
