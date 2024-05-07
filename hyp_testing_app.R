@@ -31,6 +31,7 @@ ui <- fluidPage(
       plotOutput("histogram"),
       h4(textOutput("p_hat_text")),  # Display p_hat value
       h4(textOutput("samples_out_of_1000_text")),  # Display count of samples out of 1000
+      h4(textOutput("p_value_text")),
       conditionalPanel(
         condition = "input.alternative == 'less than'",
         plotOutput("density_plot_less_than")  # Display density plot for less than
@@ -64,7 +65,7 @@ server <- function(input, output, session) {
                           "greater than" = "greater")
     
     # Generate 1000 samples
-    new_samples <- replicate(1000, rbinom(1, size = n, prob = input$null_value))
+    new_samples <- rbinom(1000, size = n, prob = input$null_value)
     
     # Add new samples to previous samples
     if (is.null(samples)) {
@@ -79,10 +80,16 @@ server <- function(input, output, session) {
     # Count of samples based on alternative hypothesis
     if (alternative == "less") {
       samples_out_of_1000 <- sum(proportions < p_hat)
+      # Calculate p-value
+      p_value <- samples_out_of_1000/length(samples)
     } else if (alternative == "greater") {
       samples_out_of_1000 <- sum(proportions > p_hat)
+      # Calculate p-value
+      p_value <- samples_out_of_1000/length(samples)
     } else {
       samples_out_of_1000 <- sum(abs(proportions - p_hat) > abs(input$null_value - p_hat))
+      # Calculate p-value
+      p_value <- samples_out_of_1000/length(samples)
     }
     
     # Convert proportions to data frame for ggplot
@@ -126,7 +133,12 @@ server <- function(input, output, session) {
     
     # Display count of samples out of 1000
     output$samples_out_of_1000_text <- renderText({
-      paste("Samples out of 1000:", samples_out_of_1000)
+      paste("Samples out of ", length(samples), ":", samples_out_of_1000)
+    })
+    
+    # Display p value
+    output$p_value_text <- renderText({
+      paste("p =", round(p_value, 3))
     })
     
     # Plot standard normal density plot for less than
@@ -221,6 +233,7 @@ server <- function(input, output, session) {
     output$total_samples_text <- renderText("Total Samples: 0")
     output$p_hat_text <- renderText(NULL)
     output$samples_out_of_1000_text <- renderText(NULL)
+    output$p_value_text <- renderText(NULL)
     output$density_plot_less_than <- renderPlot(NULL)
     output$density_plot_greater_than <- renderPlot(NULL)
     output$density_plot_not_equal_to <- renderPlot(NULL)
