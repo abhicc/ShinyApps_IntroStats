@@ -9,10 +9,10 @@ ui <- fluidPage(
     tabPanel("Mean", value = "mean",
              sidebarLayout(
                sidebarPanel(
-                 numericInput("pop_mean", "Population mean (μ):", value = 0.5, min = 0, max = 1, step = 0.1),
-                 numericInput("pop_sd", "Population SD (σ):", value = 10),
-                 numericInput("sample_size", "Sample size (n):", value = 50, min = 1),
-                 numericInput("num_intervals_mean", "Number of intervals:", value = 10, min = 1),
+                 sliderInput("pop_mean", "Population mean (μ):", value = 0, min = -10, max = 10, step = 0.1),
+                 sliderInput("pop_sd", "Population SD (σ):", value = 10, min = 0, max = 50),
+                 sliderInput("sample_size", "Sample size (n):", value = 50, min = 5, max = 100),
+                 sliderInput("num_intervals_mean", "Number of intervals:", value = 10, min = 0, max = 100),
                  selectInput("confidence_mean", "Confidence level:",
                              choices = c("95%" = 0.95, "90%" = 0.90, "99%" = 0.99)),
                  textOutput("intervals_containing_mu"), # Display number of intervals containing the parameter and percentage
@@ -25,9 +25,9 @@ ui <- fluidPage(
     tabPanel("Proportion", value = "proportion",
              sidebarLayout(
                sidebarPanel(
-                 numericInput("pop_prop", "Population proportion (π):", value = 0.5, min = 0, max = 1, step = 0.1),
-                 numericInput("sample_size_prop", "Sample size (n):", value = 50, min = 1),
-                 numericInput("num_intervals_prop", "Number of intervals:", value = 10, min = 1),
+                 sliderInput("pop_prop", "Population proportion (π):", value = 0.5, min = 0, max = 1, step = 0.1),
+                 sliderInput("sample_size_prop", "Sample size (n):", value = 50, min = 5, max = 100),
+                 sliderInput("num_intervals_prop", "Number of intervals:", value = 10, min = 0, max = 100),
                  selectInput("confidence_prop", "Confidence level:",
                              choices = c("95%" = 0.95, "90%" = 0.90, "99%" = 0.99)),
                  textOutput("intervals_containing_param_prop"), # Display number of intervals containing the parameter and percentage
@@ -39,6 +39,7 @@ ui <- fluidPage(
              ))
   )
 )
+
 
 # Define server logic
 server <- function(input, output, session) {
@@ -116,13 +117,15 @@ server <- function(input, output, session) {
                      height = 0.2) +
       geom_point(data = do.call(rbind, ci_data), 
                  mapping = aes(y = y, x = x, color = contains_mean, text = paste("Lower bound:", round(xmax, 2), "<br>Upper bound:", round(xmin, 2)))) +
-      scale_color_manual(values = c("TRUE" = "#009E73", "FALSE" = "#882255"), guide = FALSE, labels = c("TRUE" = "Contains Parameter", "FALSE" = "Doesn't Contain Parameter")) +
+      scale_color_manual(values = c("TRUE" = "#009E73", "FALSE" = "#882255"), guide = FALSE) +
       labs(title = "Confidence Intervals",
            x = "Mean",
            y = "Interval") +
       theme_minimal() +
       theme(axis.text.y = element_blank(),  # Hide y-axis text
-            axis.title.y = element_blank()) # Hide y-axis label
+            axis.title.y = element_blank()) +  # Hide y-axis label 
+      geom_text(aes(x = Inf, y = Inf, label = factor(c("TRUE", "FALSE"))), 
+                hjust = 1.1, vjust = c(1.1, -0.2), size = 3, show.legend = TRUE)
     
     output$green_lines_count_mean <- renderText({
       percentage <- round(num_green_lines / input$num_intervals_mean * 100, 2)
