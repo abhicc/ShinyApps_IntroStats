@@ -9,10 +9,10 @@ ui <- fluidPage(
     tabPanel("Mean", value = "mean",
              sidebarLayout(
                sidebarPanel(
-                 sliderInput("pop_mean", "Population mean (μ):", value = 0, min = -10, max = 10, step = 0.1),
-                 sliderInput("pop_sd", "Population SD (σ):", value = 10, min = 0, max = 50),
-                 sliderInput("sample_size", "Sample size (n):", value = 50, min = 5, max = 100),
-                 sliderInput("num_intervals_mean", "Number of intervals:", value = 10, min = 0, max = 100),
+                 numericInput("pop_mean", "Population mean (μ):", value = 0, min = -10, max = 10, step = 0.1),
+                 numericInput("pop_sd", "Population SD (σ):", value = 10, min = 0, max = 50),
+                 numericInput("sample_size", "Sample size (n):", value = 50, min = 5, max = 100),
+                 numericInput("num_intervals_mean", "Number of intervals:", value = 10, min = 0, max = 100),
                  selectInput("confidence_mean", "Confidence level:",
                              choices = c("95%" = 0.95, "90%" = 0.90, "99%" = 0.99)),
                  textOutput("intervals_containing_mu"), # Display number of intervals containing the parameter and percentage
@@ -25,9 +25,9 @@ ui <- fluidPage(
     tabPanel("Proportion", value = "proportion",
              sidebarLayout(
                sidebarPanel(
-                 sliderInput("pop_prop", "Population proportion (π):", value = 0.5, min = 0, max = 1, step = 0.1),
-                 sliderInput("sample_size_prop", "Sample size (n):", value = 50, min = 5, max = 100),
-                 sliderInput("num_intervals_prop", "Number of intervals:", value = 10, min = 0, max = 100),
+                 numericInput("pop_prop", "Population proportion (π):", value = 0.5, min = 0, max = 1, step = 0.1),
+                 numericInput("sample_size_prop", "Sample size (n):", value = 50, min = 5, max = 100),
+                 numericInput("num_intervals_prop", "Number of intervals:", value = 10, min = 0, max = 100),
                  selectInput("confidence_prop", "Confidence level:",
                              choices = c("95%" = 0.95, "90%" = 0.90, "99%" = 0.99)),
                  textOutput("intervals_containing_param_prop"), # Display number of intervals containing the parameter and percentage
@@ -129,7 +129,7 @@ server <- function(input, output, session) {
     
     output$green_lines_count_mean <- renderText({
       percentage <- round(num_green_lines / input$num_intervals_mean * 100, 2)
-      paste("Number of Inervals Containing Parameter",  num_green_lines, "/", input$num_intervals_mean, "=", percentage, "%")
+      paste("Percentage of intervals containing μ:",  num_green_lines, "/", input$num_intervals_mean, "=", percentage, "%")
     })
     
     ggplotly(gg) # Convert ggplot2 figure into an interactive plotly plot
@@ -222,7 +222,7 @@ server <- function(input, output, session) {
     # Update the count of green lines
     output$green_lines_count_prop <- renderText({
       percentage <- round(num_green_lines / input$num_intervals_prop * 100, 2)
-      paste("Number of Inervals Containing Parameter",  num_green_lines, "/", input$num_intervals_prop, "=", percentage, "%")
+      paste("Percentage of intervals containing π:",  num_green_lines, "/", input$num_intervals_prop, "=", percentage, "%")
     })
     
     ggplotly(gg) # Convert ggplot2 figure into an interactive plotly plot
