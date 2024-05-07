@@ -9,10 +9,10 @@ ui <- fluidPage(
     tabPanel("Mean", value = "mean",
              sidebarLayout(
                sidebarPanel(
-                 numericInput("pop_mean", "Population mean (μ):", value = 0, min = -10, max = 10, step = 0.1),
-                 numericInput("pop_sd", "Population SD (σ):", value = 10, min = 0, max = 50),
-                 numericInput("sample_size", "Sample size (n):", value = 50, min = 5, max = 100),
-                 numericInput("num_intervals_mean", "Number of intervals:", value = 10, min = 0, max = 100),
+                 sliderInput("pop_mean", "Population mean (μ):", value = 0.5, min = -10, max = 10, step = 0.1),
+                 sliderInput("pop_sd", "Population SD (σ):", value = 10, min = 0, max = 20),
+                 sliderInput("sample_size", "Sample size (n):", value = 100, min = 1, max = 100),
+                 sliderInput("num_intervals_mean", "Number of intervals:", value = 10, min = 1, max = 100),
                  selectInput("confidence_mean", "Confidence level:",
                              choices = c("95%" = 0.95, "90%" = 0.90, "99%" = 0.99)),
                  textOutput("intervals_containing_mu"), # Display number of intervals containing the parameter and percentage
@@ -25,9 +25,9 @@ ui <- fluidPage(
     tabPanel("Proportion", value = "proportion",
              sidebarLayout(
                sidebarPanel(
-                 numericInput("pop_prop", "Population proportion (π):", value = 0.5, min = 0, max = 1, step = 0.1),
-                 numericInput("sample_size_prop", "Sample size (n):", value = 50, min = 5, max = 100),
-                 numericInput("num_intervals_prop", "Number of intervals:", value = 10, min = 0, max = 100),
+                 sliderInput("pop_prop", "Population proportion (π):", value = 0.5, min = 0, max = 1, step = 0.1),
+                 sliderInput("sample_size_prop", "Sample size (n):", value = 100, min = 1, max = 100),
+                 sliderInput("num_intervals_prop", "Number of intervals:", value = 10, min = 1, max = 100),
                  selectInput("confidence_prop", "Confidence level:",
                              choices = c("95%" = 0.95, "90%" = 0.90, "99%" = 0.99)),
                  textOutput("intervals_containing_param_prop"), # Display number of intervals containing the parameter and percentage
