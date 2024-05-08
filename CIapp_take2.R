@@ -112,6 +112,7 @@ server <- function(input, output, session) {
     }))
     
     # Create plot for mean simulation
+    # Create plot for mean simulation
     gg <- ggplot() +
       geom_vline(xintercept = input$pop_mean, linetype = "dashed", color = "#D55E00") +
       geom_errorbarh(data = do.call(rbind, ci_data), 
@@ -121,16 +122,20 @@ server <- function(input, output, session) {
                  mapping = aes(y = y, x = x, color = contains_mean, 
                                text = paste("Contains Parameter:", ifelse(contains_mean, "TRUE", "FALSE"), "<br>Lower bound:", round(xmax, 2), "<br>Upper bound:", round(xmin, 2))), 
                  show.legend = FALSE) +
-      
-      scale_color_manual(values = c("TRUE" = "#009E73", "FALSE" = "#882255"), guide = FALSE) +
+      scale_color_manual(values = c("TRUE" = "#009E73", "FALSE" = "#882255"), 
+                         guide = guide_legend(title = "Contains Parameter:", 
+                                              labels = c("TRUE" = "Contains Parameter", "FALSE" = "Doesn't Contain Parameter"))) +
       labs(title = "Confidence Intervals",
            x = "Mean",
            y = "Interval") +
       theme_minimal() +
       theme(axis.text.y = element_blank(),  # Hide y-axis text
-            axis.title.y = element_blank()) +  # Hide y-axis label 
-      geom_text(aes(x = Inf, y = Inf, label = factor(c("TRUE", "FALSE"))), 
-                hjust = 1.1, vjust = c(1.1, -0.2), size = 3, show.legend = TRUE)
+            axis.title.y = element_blank())  # Hide y-axis label
+    
+    
+    
+    
+    
     
     output$green_lines_count_mean <- renderText({
       percentage <- round(num_green_lines / input$num_intervals_mean * 100, 2)
@@ -217,7 +222,12 @@ server <- function(input, output, session) {
       geom_point(data = do.call(rbind, ci_data), 
                  mapping = aes(y = y, x = x, color = contains_prop, text = paste("Contains Parameter:", contains_prop, "<br>Lower bound:", round(xmax, 2), "<br>Upper bound:", round(xmin, 2))), 
                  show.legend = FALSE) +
-      scale_color_manual(values = c("TRUE" = "#009E73", "FALSE" = "#882255"), guide = FALSE, labels = c("TRUE" = "Contains Parameter", "FALSE" = "Doesn't Contain Parameter")) +
+      scale_color_manual(values = c("TRUE" = "#009E73", "FALSE" = "#882255"), 
+                         guide = FALSE, 
+                         labels = c("TRUE" = "Contains Parameter", "FALSE" = "Doesn't Contain Parameter")) +
+      scale_color_manual(values = c("TRUE" = "#009E73", "FALSE" = "#882255"), 
+                         guide = guide_legend(title = "Contains Parameter: ", 
+                                              labels = c("TRUE" = "Contains Parameter", "FALSE" = "Doesn't Contain Parameter"))) +
       labs(title = "Confidence Intervals",
            x = "Proportion",
            y = "Interval") +
@@ -237,3 +247,6 @@ server <- function(input, output, session) {
 
 # Run the application
 shinyApp(ui = ui, server = server)
+
+
+
