@@ -118,8 +118,10 @@ server <- function(input, output, session) {
                      mapping = aes(y = y, xmin = xmax, xmax = xmin, color = contains_mean), 
                      height = 0.2) +
       geom_point(data = do.call(rbind, ci_data), 
-                 mapping = aes(y = y, x = x, color = contains_mean, text = paste("Contains Parameter:", contains_mean, "<br>Lower bound:", round(xmax, 2), "<br>Upper bound:", round(xmin, 2))), 
+                 mapping = aes(y = y, x = x, color = contains_mean, 
+                               text = paste("Contains Parameter:", ifelse(contains_mean, "TRUE", "FALSE"), "<br>Lower bound:", round(xmax, 2), "<br>Upper bound:", round(xmin, 2))), 
                  show.legend = FALSE) +
+      
       scale_color_manual(values = c("TRUE" = "#009E73", "FALSE" = "#882255"), guide = FALSE) +
       labs(title = "Confidence Intervals",
            x = "Mean",
