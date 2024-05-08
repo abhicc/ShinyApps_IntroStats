@@ -1,3 +1,5 @@
+
+
 library(tidyverse)
 library(plotly)
 library(shiny)
@@ -116,7 +118,8 @@ server <- function(input, output, session) {
                      mapping = aes(y = y, xmin = xmax, xmax = xmin, color = contains_mean), 
                      height = 0.2) +
       geom_point(data = do.call(rbind, ci_data), 
-                 mapping = aes(y = y, x = x, color = contains_mean, text = paste("Lower bound:", round(xmax, 2), "<br>Upper bound:", round(xmin, 2)))) +
+                 mapping = aes(y = y, x = x, color = contains_mean, text = paste("Contains Parameter:", contains_mean, "<br>Lower bound:", round(xmax, 2), "<br>Upper bound:", round(xmin, 2))), 
+                 show.legend = FALSE) +
       scale_color_manual(values = c("TRUE" = "#009E73", "FALSE" = "#882255"), guide = FALSE) +
       labs(title = "Confidence Intervals",
            x = "Mean",
@@ -132,7 +135,7 @@ server <- function(input, output, session) {
       paste("Percentage of intervals containing μ:",  num_green_lines, "/", input$num_intervals_mean, "=", percentage, "%")
     })
     
-    ggplotly(gg) # Convert ggplot2 figure into an interactive plotly plot
+    ggplotly(gg, tooltip = "text")
   })
   
   # Reactive expression for calculating number of intervals containing the parameter (proportion)
@@ -210,7 +213,8 @@ server <- function(input, output, session) {
                      mapping = aes(y = y, xmin = xmin, xmax = xmax, color = contains_prop), 
                      height = 0.2) +
       geom_point(data = do.call(rbind, ci_data), 
-                 mapping = aes(y = y, x = x, color = contains_prop, text = paste("Lower bound:", round(xmax, 2), "<br>Upper bound:", round(xmin, 2)))) +
+                 mapping = aes(y = y, x = x, color = contains_prop, text = paste("Contains Parameter:", contains_prop, "<br>Lower bound:", round(xmax, 2), "<br>Upper bound:", round(xmin, 2))), 
+                 show.legend = FALSE) +
       scale_color_manual(values = c("TRUE" = "#009E73", "FALSE" = "#882255"), guide = FALSE, labels = c("TRUE" = "Contains Parameter", "FALSE" = "Doesn't Contain Parameter")) +
       labs(title = "Confidence Intervals",
            x = "Proportion",
@@ -225,7 +229,7 @@ server <- function(input, output, session) {
       paste("Percentage of intervals containing π:",  num_green_lines, "/", input$num_intervals_prop, "=", percentage, "%")
     })
     
-    ggplotly(gg) # Convert ggplot2 figure into an interactive plotly plot
+    ggplotly(gg, tooltip = "text")
   })
 }
 
