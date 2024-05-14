@@ -5,10 +5,8 @@
 # the interpretation of CIs.
 ################################################################################
 
-library(tidyverse)
 library(plotly)
 library(shiny)
-
 # Define UI
 ui <- fluidPage(
   titlePanel("Simulating Confidence Intervals"), # Application title 
@@ -19,7 +17,7 @@ ui <- fluidPage(
                  sliderInput("pop_mean", "Population mean (μ):", value = 0.5, min = -10, max = 10, step = 0.1),
                  sliderInput("pop_sd", "Population SD (σ):", value = 10, min = 0, max = 20),
                  sliderInput("sample_size", "Sample size (n):", value = 100, min = 1, max = 100),
-                 sliderInput("num_intervals_mean", "Number of intervals:", value = 10, min = 1, max = 100),
+                 sliderInput("num_intervals_mean", "Number of intervals:", value = 10, min = 1, max = 1000),
                  selectInput("confidence_mean", "Confidence level:",
                              choices = c("95%" = 0.95, "90%" = 0.90, "99%" = 0.99)),
                  textOutput("intervals_containing_mu"), # Display number of intervals containing the parameter and percentage
@@ -46,8 +44,6 @@ ui <- fluidPage(
              ))
   )
 )
-
-
 # Define server logic
 server <- function(input, output, session) {
   
@@ -92,7 +88,6 @@ server <- function(input, output, session) {
   # })
   # 
   # Render the plot for mean simulation
-  # Render the plot for mean simulation
   output$conf_plot_mean <- renderPlotly({
     # Generate data for specified number of intervals
     sample_data_mean <- lapply(1:input$num_intervals_mean, function(i) {
@@ -103,7 +98,8 @@ server <- function(input, output, session) {
     ci_data <- lapply(sample_data_mean, function(data) {
       ci <- qnorm((1 - as.numeric(input$confidence_mean)) / 2, mean = 0, sd = 1)
       lower_bound <- mean(data$x) - ci * (input$pop_sd / sqrt(input$sample_size)) # Standard deviation of the normal distribution is 1
-      upper_bound <- mean(data$x) + ci * (input$pop_sd / sqrt(input$sample_size))
+      upper_bound <- mean(data$x) + ci * (input$pop_sd / sqrt(input$sample_size))      
+      
       contains_mean <- ifelse(input$pop_mean >= min(lower_bound, upper_bound) && input$pop_mean <= max(lower_bound, upper_bound), "Contains Parameter", "Doesn't Contain Parameter")
       data.frame(y = data$y, x = mean(data$x), xmin = lower_bound, xmax = upper_bound, contains_mean = contains_mean)
     })
@@ -124,19 +120,21 @@ server <- function(input, output, session) {
                      mapping = aes(y = y, xmin = xmax, xmax = xmin, color = contains_mean), 
                      height = 0.2) +
       geom_point(data = do.call(rbind, ci_data), 
+                 #   mapping = aes(y = y, x = x, color = contains_mean, text = paste("Contains Parameter:", contains_mean, "<br>Lower bound:", round(xmax, 2), "<br>Upper bound:", round(xmin, 2))), 
                  mapping = aes(y = y, x = x, color = contains_mean, 
-                               text = paste("Contains Parameter:", ifelse(contains_mean == "Contains Parameter", "TRUE", "TRUE"), "<br>Lower bound:", round(xmax, 2), "<br>Upper bound:", round(xmin, 2))), 
+                               text = paste("Contains Parameter:", ifelse(contains_mean == "Contains Parameter", "TRUE", "FALSE"), "<br>Lower bound:", round(xmax, 2), "<br>Upper bound:", round(xmin, 2))), 
                  show.legend = FALSE) +
-      scale_color_manual(values = c("Contains Parameter" = "#009E73", "Doesn't Contain Parameter" = "#882255"), 
-                         guide = FALSE) +
+      
+      scale_color_manual(values = c("Contains Parameter" = "#009E73", "Doesn't Contain Parameter" = "#882255"), guide = FALSE) +
       labs(title = "Confidence Intervals",
            x = "Mean",
            y = "Interval") +
       theme_minimal() +
       theme(axis.text.y = element_blank(),  # Hide y-axis text
-            axis.title.y = element_blank())  # Hide y-axis label
+            axis.title.y = element_blank()) +  # Hide y-axis label 
+      geom_text(aes(x = Inf, y = Inf, label = factor(c("TRUE", "FALSE"))), 
+                hjust = 1.1, vjust = c(1.1, -0.2), size = 3, show.legend = TRUE)
     
-    # Update the count of green lines
     output$green_lines_count_mean <- renderText({
       percentage <- round(num_green_lines / input$num_intervals_mean * 100, 2)
       paste("Percentage of intervals containing μ:",  num_green_lines, "/", input$num_intervals_mean, "=", percentage, "%")
@@ -155,11 +153,9 @@ server <- function(input, output, session) {
           "Doesn't Contain Parameter" = "Doesn't Contain Parameter"  # Update label to reflect "μ"
         )      ))
     
-  
+    
     gg
   })
-  
-  
   
   # Reactive expression for calculating number of intervals containing the parameter (proportion)
   intervals_containing_param_prop <- reactiveVal(0)
@@ -194,6 +190,14 @@ server <- function(input, output, session) {
     intervals_containing_param_prop(intervals_with_param)
   })
   
+  # Display number of intervals containing the parameter and percentage for proportion
+  # output$intervals_containing_param_prop <- renderText({
+  #   total_intervals <- input$num_intervals_prop
+  #   intervals_with_param <- intervals_containing_param_prop()
+  #   percentage <- round(intervals_with_param / total_intervals * 100, 2)
+  #   paste("Number of intervals containing π:", intervals_with_param, "/", total_intervals, "=", percentage, "%")
+  # })
+  
   # Render the plot for proportion simulation
   output$conf_plot_prop <- renderPlotly({
     # Generate data for specified number of intervals
@@ -209,7 +213,7 @@ server <- function(input, output, session) {
       lower_bound <- p_hat - ci * se
       upper_bound <- p_hat + ci * se
       contains_prop <- ifelse(input$pop_prop >= min(lower_bound, upper_bound) && input$pop_prop <= max(lower_bound, upper_bound), "Contains Parameter", "Doesn't Contain Parameter")
-      data.frame(y = data$y, x = p_hat, xmin = lower_bound, xmax = upper_bound, contains_prop = contains_prop, text = paste("Contains Parameter:", contains_prop, "<br>Lower bound:", round(lower_bound, 2), "<br>Upper bound:", round(upper_bound, 2)))
+      data.frame(y = data$y, x = p_hat, xmin = lower_bound, xmax = upper_bound, contains_prop = contains_prop, text = paste("Lower bound:", round(lower_bound, 2), "<br>Upper bound:", round(upper_bound, 2)))
     })
     
     # Count the number of green lines
@@ -228,11 +232,9 @@ server <- function(input, output, session) {
                      mapping = aes(y = y, xmin = xmin, xmax = xmax, color = contains_prop), 
                      height = 0.2) +
       geom_point(data = do.call(rbind, ci_data), 
-                 mapping = aes(y = y, x = x, color = contains_prop, text = paste("Contains Parameter:", contains_prop, "<br>Lower bound:", round(xmax, 2), "<br>Upper bound:", round(xmin, 2))), 
-                 show.legend = FALSE) +  # Update text to include if/else statement and bounds
-      scale_color_manual(values = c("Contains Parameter" = "#009E73", "Doesn't Contain Parameter" = "#882255")) +
-      
-      
+                 mapping = aes(y = y, x = x, color = contains_prop, text = paste("Contains Parameter:", ifelse(contains_prop == "Contains Parameter", "TRUE", "FALSE"), "<br>Lower bound:", round(xmax, 2), "<br>Upper bound:", round(xmin, 2))), 
+                 show.legend = FALSE) +
+      scale_color_manual(values = c("Contains Parameter" = "#009E73", "Doesn't Contain Parameter" = "#882255"), guide = FALSE, labels = c("Contains Parameter" = "Contains Parameter", "Doesn't Contain Parameter" = "Doesn't Contain Parameter")) +
       labs(title = "Confidence Intervals",
            x = "Proportion",
            y = "Interval") +
@@ -246,29 +248,22 @@ server <- function(input, output, session) {
       paste("Percentage of intervals containing π:",  num_green_lines, "/", input$num_intervals_prop, "=", percentage, "%")
     })
     
-    # Update legend labels and add a title
+    gg <- ggplotly(gg, tooltip = "text")
+    
     gg <- ggplotly(gg) %>%
       layout(legend = list(
-        title = list(text = ""),  # Add a title to the legend
+        itemsizing = "constant",
+        orientation = "v",
+        traceorder = "normal",
+        title = list(text = "         Click to Hide:"),  # Add a title to the legend
         labels = list(
           "Contains Parameter" = "Contains Parameter",
           "Doesn't Contain Parameter" = "Doesn't Contain Parameter"  # Update label to reflect "μ"
-        )
-      ))
+        )      ))
+    
     
     gg
-    
   })
-  
-    
- 
-    
- 
-  
 }
-
 # Run the application
 shinyApp(ui = ui, server = server)
-
-
-
