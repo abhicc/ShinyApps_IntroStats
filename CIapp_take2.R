@@ -220,13 +220,14 @@ server <- function(input, output, session) {
     }))
     
     # Create plot for proportion simulation
+    # Create plot for proportion simulation
     gg <- ggplot() +
       geom_vline(xintercept = input$pop_prop, linetype = "dashed", color = "#D55E00") +
       geom_errorbarh(data = do.call(rbind, ci_data), 
                      mapping = aes(y = y, xmin = xmin, xmax = xmax, color = contains_prop), 
                      height = 0.2) +
       geom_point(data = do.call(rbind, ci_data), 
-                 mapping = aes(y = y, x = x, color = contains_prop, text = paste("Contains Parameter:", ifelse(contains_prop == "Contains Parameter", "TRUE", "FALSE"), "<br>Lower bound:", round(xmax, 2), "<br>Upper bound:", round(xmin, 2))), 
+                 mapping = aes(y = y, x = x, color = contains_prop, text = paste("Contains Parameter:", contains_prop, "<br>Lower bound:", round(xmax, 2), "<br>Upper bound:", round(xmin, 2))), 
                  show.legend = FALSE) +
       scale_color_manual(values = c("Contains Parameter" = "#009E73", "Doesn't Contain π" = "#882255")) +
       
