@@ -17,7 +17,7 @@ ui <- fluidPage(
                  sliderInput("pop_mean", "Population mean (μ):", value = 0.5, min = -10, max = 10, step = 0.1),
                  sliderInput("pop_sd", "Population SD (σ):", value = 10, min = 0, max = 20),
                  sliderInput("sample_size", "Sample size (n):", value = 100, min = 1, max = 100),
-                 sliderInput("num_intervals_mean", "Number of intervals:", value = 10, min = 1, max = 1000),
+                 sliderInput("num_intervals_mean", "Number of intervals:", value = 10, min = 1, max = 100),
                  selectInput("confidence_mean", "Confidence level:",
                              choices = c("95%" = 0.95, "90%" = 0.90, "99%" = 0.99)),
                  textOutput("intervals_containing_mu"), # Display number of intervals containing the parameter and percentage
