@@ -102,13 +102,13 @@ server <- function(input, output, session) {
       ci <- qnorm((1 - as.numeric(input$confidence_mean)) / 2, mean = 0, sd = 1)
       lower_bound <- mean(data$x) - ci * (input$pop_sd / sqrt(input$sample_size)) # Standard deviation of the normal distribution is 1
       upper_bound <- mean(data$x) + ci * (input$pop_sd / sqrt(input$sample_size))
-      contains_mean <- ifelse(input$pop_mean >= min(lower_bound, upper_bound) && input$pop_mean <= max(lower_bound, upper_bound), "Contains π", "Doesn't Contain π")
+      contains_mean <- ifelse(input$pop_mean >= min(lower_bound, upper_bound) && input$pop_mean <= max(lower_bound, upper_bound), "Contains Parameter", "Doesn't Contain π")
       data.frame(y = data$y, x = mean(data$x), xmin = lower_bound, xmax = upper_bound, contains_mean = contains_mean)
     })
     
     # Count the number of green lines
     num_green_lines <- sum(sapply(ci_data, function(ci) {
-      if (ci$contains_mean[1] == "Contains π") {
+      if (ci$contains_mean[1] == "Contains Parameter") {
         1
       } else {
         0
@@ -123,9 +123,9 @@ server <- function(input, output, session) {
                      height = 0.2) +
       geom_point(data = do.call(rbind, ci_data), 
                  mapping = aes(y = y, x = x, color = contains_mean, 
-                               text = paste("Contains Parameter:", ifelse(contains_mean == "Contains π", "TRUE", "TRUE"), "<br>Lower bound:", round(xmax, 2), "<br>Upper bound:", round(xmin, 2))), 
+                               text = paste("Contains Parameter:", ifelse(contains_mean == "Contains Parameter", "TRUE", "TRUE"), "<br>Lower bound:", round(xmax, 2), "<br>Upper bound:", round(xmin, 2))), 
                  show.legend = FALSE) +
-      scale_color_manual(values = c("Contains π" = "#009E73", "Doesn't Contain π" = "#882255"), 
+      scale_color_manual(values = c("Contains Parameter" = "#009E73", "Doesn't Contain π" = "#882255"), 
                          guide = FALSE) +
       labs(title = "Confidence Intervals",
            x = "Mean",
@@ -142,18 +142,18 @@ server <- function(input, output, session) {
     
     gg <- ggplotly(gg, tooltip = "text")
     
-    # Update legend labels
     gg <- ggplotly(gg) %>%
       layout(legend = list(
         itemsizing = "constant",
         orientation = "v",
         traceorder = "normal",
-        title = "Contains Parameter",
+        title = list(text = "         Click to Hide:"),  # Add a title to the legend
         labels = list(
-          "Contains π" = "Contains π",
-          "Doesn't Contain π" = "Doesn't Contain π"
-        )
-      ))
+          "Contains Parameter" = "Contains Parameter",
+          "Doesn't Contain π" = "Doesn't Contain μ"  # Update label to reflect "μ"
+        )      ))
+    
+  
     gg
   })
   
@@ -206,13 +206,13 @@ server <- function(input, output, session) {
       se <- sqrt(p_hat * (1 - p_hat) / input$sample_size_prop) # Standard error of the proportion
       lower_bound <- p_hat - ci * se
       upper_bound <- p_hat + ci * se
-      contains_prop <- ifelse(input$pop_prop >= min(lower_bound, upper_bound) && input$pop_prop <= max(lower_bound, upper_bound), "Contains π", "Doesn't Contain π")
+      contains_prop <- ifelse(input$pop_prop >= min(lower_bound, upper_bound) && input$pop_prop <= max(lower_bound, upper_bound), "Contains Parameter", "Doesn't Contain π")
       data.frame(y = data$y, x = p_hat, xmin = lower_bound, xmax = upper_bound, contains_prop = contains_prop, text = paste("Lower bound:", round(lower_bound, 2), "<br>Upper bound:", round(upper_bound, 2)))
     })
     
     # Count the number of green lines
     num_green_lines <- sum(sapply(ci_data, function(ci) {
-      if (ci$contains_prop[1] == "Contains π") {
+      if (ci$contains_prop[1] == "Contains Parameter") {
         1
       } else {
         0
@@ -226,9 +226,9 @@ server <- function(input, output, session) {
                      mapping = aes(y = y, xmin = xmin, xmax = xmax, color = contains_prop), 
                      height = 0.2) +
       geom_point(data = do.call(rbind, ci_data), 
-                 mapping = aes(y = y, x = x, color = contains_prop, text = paste("Contains Parameter:", ifelse(contains_prop == "Contains π", "TRUE", "FALSE"), "<br>Lower bound:", round(xmax, 2), "<br>Upper bound:", round(xmin, 2))), 
+                 mapping = aes(y = y, x = x, color = contains_prop, text = paste("Contains Parameter:", ifelse(contains_prop == "Contains Parameter", "TRUE", "FALSE"), "<br>Lower bound:", round(xmax, 2), "<br>Upper bound:", round(xmin, 2))), 
                  show.legend = FALSE) +
-      scale_color_manual(values = c("Contains π" = "#009E73", "Doesn't Contain π" = "#882255")) +
+      scale_color_manual(values = c("Contains Parameter" = "#009E73", "Doesn't Contain π" = "#882255")) +
       
       
       labs(title = "Confidence Intervals",
@@ -244,14 +244,19 @@ server <- function(input, output, session) {
       paste("Percentage of intervals containing π:",  num_green_lines, "/", input$num_intervals_prop, "=", percentage, "%")
     })
     
-    gg <- ggplotly(gg, tooltip = "text") %>% 
-      layout(legend = list(title = "Click to Hide:"))
-    
-    
+    # Update legend labels and add a title
+    gg <- ggplotly(gg) %>%
+      layout(legend = list(
+        itemsizing = "constant",
+        orientation = "v",
+        traceorder = "normal",
+        title = list(text = "         Click to Hide:"),  # Add a title to the legend
+        labels = list(
+          "Contains Parameter" = "Contains Parameter",
+          "Doesn't Contain π" = "Doesn't Contain μ"  # Update label to reflect "μ"
+        )      ))
     
     gg
-    
-    
     
   })
   
