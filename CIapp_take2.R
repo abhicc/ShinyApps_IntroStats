@@ -150,7 +150,7 @@ server <- function(input, output, session) {
         title = list(text = "         Click to Hide:"),  # Add a title to the legend
         labels = list(
           "Contains Parameter" = "Contains Parameter",
-          "Doesn't Contain Parameter" = "Doesn't Contain μ"  # Update label to reflect "μ"
+          "Doesn't Contain Parameter" = "Doesn't Contain Parameter"  # Update label to reflect "μ"
         )      ))
     
   
@@ -207,7 +207,7 @@ server <- function(input, output, session) {
       lower_bound <- p_hat - ci * se
       upper_bound <- p_hat + ci * se
       contains_prop <- ifelse(input$pop_prop >= min(lower_bound, upper_bound) && input$pop_prop <= max(lower_bound, upper_bound), "Contains Parameter", "Doesn't Contain Parameter")
-      data.frame(y = data$y, x = p_hat, xmin = lower_bound, xmax = upper_bound, contains_prop = contains_prop, text = paste("Lower bound:", round(lower_bound, 2), "<br>Upper bound:", round(upper_bound, 2)))
+      data.frame(y = data$y, x = p_hat, xmin = lower_bound, xmax = upper_bound, contains_prop = contains_prop, text = paste("Contains Parameter:", contains_prop, "<br>Lower bound:", round(lower_bound, 2), "<br>Upper bound:", round(upper_bound, 2)))
     })
     
     # Count the number of green lines
@@ -220,7 +220,6 @@ server <- function(input, output, session) {
     }))
     
     # Create plot for proportion simulation
-    # Create plot for proportion simulation
     gg <- ggplot() +
       geom_vline(xintercept = input$pop_prop, linetype = "dashed", color = "#D55E00") +
       geom_errorbarh(data = do.call(rbind, ci_data), 
@@ -228,7 +227,7 @@ server <- function(input, output, session) {
                      height = 0.2) +
       geom_point(data = do.call(rbind, ci_data), 
                  mapping = aes(y = y, x = x, color = contains_prop, text = paste("Contains Parameter:", contains_prop, "<br>Lower bound:", round(xmax, 2), "<br>Upper bound:", round(xmin, 2))), 
-                 show.legend = FALSE) +
+                 show.legend = FALSE) +  # Update text to include if/else statement and bounds
       scale_color_manual(values = c("Contains Parameter" = "#009E73", "Doesn't Contain Parameter" = "#882255")) +
       
       
@@ -248,18 +247,21 @@ server <- function(input, output, session) {
     # Update legend labels and add a title
     gg <- ggplotly(gg) %>%
       layout(legend = list(
-        itemsizing = "constant",
-        orientation = "v",
-        traceorder = "normal",
-        title = list(text = "         Click to Hide:"),  # Add a title to the legend
+        title = list(text = ""),  # Add a title to the legend
         labels = list(
           "Contains Parameter" = "Contains Parameter",
-          "Doesn't Contain Parameter" = "Doesn't Contain μ"  # Update label to reflect "μ"
-        )      ))
+          "Doesn't Contain Parameter" = "Doesn't Contain Parameter"  # Update label to reflect "μ"
+        )
+      ))
     
     gg
     
   })
+  
+    
+ 
+    
+ 
   
 }
 
