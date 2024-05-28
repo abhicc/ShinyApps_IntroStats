@@ -45,6 +45,12 @@ ui <- fluidPage(
                column(6, plotOutput("hist")),
                column(6, plotOutput("boxplot")),
                column(2, tableOutput("table"))
+             ),
+             fluidRow(
+               column(
+                 width = 12,
+                 p("App created by Nina Austria and Andrea Zantek and maintained by Abhishek Chakraborty", align = "center", style = "margin-top: 20px;")
+               )
              )
     ),
     # Tab for Dynamic Mean and SD
@@ -70,6 +76,12 @@ ui <- fluidPage(
              fluidRow(
                column(6, plotOutput("hist_dynamic")),
                column(6, plotOutput("boxplot_dynamic"))
+             ),
+             fluidRow(
+               column(
+                 width = 12,
+                 p("App created by Nina Austria and Andrea Zantek and maintained by Abhishek Chakraborty", align = "center", style = "margin-top: 20px;")
+               )
              )
     ),
     # Tab for Preloaded Datasets
@@ -88,6 +100,12 @@ ui <- fluidPage(
                column(7,
                       uiOutput("data_plot"),
                       tableOutput("data_table")
+               )
+             ),
+             fluidRow(
+               column(
+                 width = 12,
+                 p("App created by Nina Austria and Andrea Zantek and maintained by Abhishek Chakraborty", align = "center", style = "margin-top: 20px;")
                )
              )
     )
