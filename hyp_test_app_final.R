@@ -83,6 +83,7 @@ server <- function(input, output, session) {
     }
     
     # Count of samples based on alternative hypothesis
+    # ERROR: SAMPLES OUT OF 1000 AND P-VAL NOT MATCHING UP FOR TWO-SIDED TEST
     if (alternative == "less") {
       samples_out_of_1000 <- sum(samples$prop < p_hat)
       p_value <- prop(~ prop < p_hat, data = samples)      # Calculate p-value
@@ -90,6 +91,7 @@ server <- function(input, output, session) {
       samples_out_of_1000 <- sum(samples$prop > p_hat)
       p_value <- prop(~ prop > p_hat, data = samples)     # Calculate p-value
     } else {
+      # this is where an error seems to be occurring:
       if (p_hat < input$null_value) {
         samples_out_of_1000 <- sum(samples$prop < p_hat) + sum(samples$prop > (1-p_hat))
         p_value <- prop(~ prop < p_hat, data = samples) * 2      # Calculate p-value
