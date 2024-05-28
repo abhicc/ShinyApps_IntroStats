@@ -43,7 +43,8 @@ ui <- fluidPage(
                )
              ))
   ),
-  fluidRow(
+
+    fluidRow(
     column(
       width = 12,
       p("App created by Nina Austria and Andrea Zantek and maintained by Abhishek Chakraborty", align = "center", style = "margin-top: 20px;")
