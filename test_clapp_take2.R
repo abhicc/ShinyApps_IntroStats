@@ -144,3 +144,4 @@ library(plotly)
     
     ggplotly(gg) # Convert ggplot2 figure into an interactive plotly plot
   })
+  

@@ -59,6 +59,12 @@ ui <- fluidPage(
       width = 12,
       plotOutput("scatter_plot")
     )
+  ),
+  fluidRow(
+    column(
+      width = 12,
+      p("App created by Andrea Zantek and maintained by Abhishek Chakraborty", align = "center", style = "margin-top: 20px;")
+    )
   )
 )
 
