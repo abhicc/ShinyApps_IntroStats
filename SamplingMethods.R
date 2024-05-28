@@ -1,5 +1,27 @@
+# Load necessary libraries
+if (!requireNamespace("tidyverse", quietly = TRUE)) {
+  install.packages("tidyverse")
+}
 library(tidyverse)
+
+if (!requireNamespace("shiny", quietly = TRUE)) {
+  install.packages("shiny")
+}
 library(shiny)
+
+if (!requireNamespace("rsconnect", quietly = TRUE)) {
+  install.packages("rsconnect")
+}
+library(rsconnect)
+
+if (!requireNamespace("MASS", quietly = TRUE)) {
+  install.packages("MASS")
+}
+library(MASS)
+
+# Set CRAN mirror
+options(repos = c(CRAN = 'https://cran.rstudio.com/'))
+
 
 # Use uniform distribution to randomly generate points in the rectangle
 plot_data <- reactive({

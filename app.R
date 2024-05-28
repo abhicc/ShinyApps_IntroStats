@@ -19,14 +19,28 @@ StudentSurvey <- StudentSurvey[complete.cases(StudentSurvey), ]
 USStates <- USStates[complete.cases(USStates), ]
 HomesForSale <- HomesForSale[complete.cases(HomesForSale), ]
 
+# Set CRAN mirror
+options(repos = c(CRAN = 'https://cran.rstudio.com/'))
 
-library(sn)
-library(tidyverse)
-library(patchwork)
-library(mosaic)
-library(fGarch)
+# Load necessary libraries
+packages <- c("tidyverse", "shiny", "rsconnect", "MASS", "sn", "patchwork", 
+              "mosaic", "fGarch", "gridExtra")
+
+# Check if packages are installed; if not, install them
+install_if_missing <- function(packages) {
+  for (package in packages) {
+    if (!requireNamespace(package, quietly = TRUE)) {
+      install.packages(package)
+      library(package, character.only = TRUE)
+    }
+  }
+}
+
+# Install and load packages
+install_if_missing(packages)
+
+# Example Shiny app
 library(shiny)
-library(gridExtra)
 
 # User Interface
 ui <- fluidPage(
