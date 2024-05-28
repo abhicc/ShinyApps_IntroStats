@@ -1,0 +1,51 @@
+# Doris and Buzz - STAT 107 Slides5, Learning How to Use Mosaic Package!
+
+```{r}
+library(mosaic)
+dolphins <- readRDS("dolphins.rds") # read in the dataset
+
+p_hat <- prop(~ Outcomes, data = dolphins, success = "Correct") # observed sample proportion
+p_hat # 15/16
+```
+
+Null hypothesis (H0): Buzz was just randomly guessing which button to push. (p = 0.5)
+
+Alternative hypothesis (Ha): Buzz was not just randomly guessing, and was using information from Doris, and the dophins were indeed communicating. (p > 0.5)
+
+How likely is it that the dolphins would have gotten 15 or more attempts correct out of 16 if they were just randomly guessing?
+
+```{r}
+rflip(n = 16, prob = 0.5) # 1 set of 16 coin flips
+
+# 1000 repetitions of 16 coin flips
+sims <- mosaic::do(1000) * mosaic::rflip(n = 16, prob = 0.5)
+
+head(sims, 10) # display the first 10 repetitions
+```
+
+```{r}
+# histogram showing results of 1000 repetitions and the observed proportion
+ggplot(data = sims) + 
+  geom_histogram(aes(x = prop)) + 
+  geom_vline(aes(xintercept = p_hat))
+
+# probability of dophins getting 15+ attempts correct out of 16, assuming they were just randomly guessing is
+prop(~ prop >= p_hat, data = sims)
+```
+
+Thus, there is strong evidence that the dolphins are not just randomly guessing, and may indeed be communicating. 
+
+p-value interpretation for Doris and Buzz study: The p-value is the probability of obtaining a sample proportion of 15/16 or more in a sample of size 16, assuming the dolphins were randomly guessing (that is, assuming the null hypothesis is true).
+
+What if Buzz had only been right on 10 of the 16 tries. Would this change our conclusion?
+```{r}
+# histogram showing results of 1000 repetitions and the observed proportion
+ggplot(data = sims) + 
+  geom_histogram(aes(x = prop)) + 
+  geom_vline(aes(xintercept = 10/16))
+
+# probability of getting 10+ attempts out of 16 correct, assuming the dophins were randomly guessing
+prop(~ prop >= 10/16, data = sims)
+```
+
+The p-value is 0.233, so it is plausible that the dolphins would have gotten 10 or more attempts correct by randomly guessing. Thus, in this situation, we would not have evidence that the dolphins are actually communicating. 
